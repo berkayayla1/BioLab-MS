@@ -58,7 +58,7 @@ BioLab-MS/
 1. Clone the repository to your local machine:
 
    ```
-   git clone https://github.com/YOUR_USERNAME/BioLab-MS.git
+   git clone https://github.com/berkayayla1/BioLab-MS.git
    
    ```
 
