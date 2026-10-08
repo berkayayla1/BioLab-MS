@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BioLab-MS | Analytics & Performance Dashboard</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #f4f6f8;
+            --card-bg: #ffffff;
+            --text-main: #2c3e50;
+            --text-muted: #7f8c8d;
+            --border-color: #ecf0f1;
+            --sidebar-bg: #1a252f;
+            --sidebar-header: #0f171e;
+            --input-bg: #ffffff;
+            --primary: #9b59b6; 
+            --primary-hover: #8e44ad;
+            
+            /* Chart Colors */
+            --chart-1: #3498db;
+            --chart-2: #9b59b6;
+            --chart-3: #2ecc71;
+            --chart-grid: #ecf0f1;
+            --chart-text: #7f8c8d;
+        }
+
+        body.dark-theme {
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --text-main: #e0e0e0;
+            --text-muted: #a0a0a0;
+            --border-color: #333333;
+            --sidebar-bg: #0a0a0a;
+            --sidebar-header: #000000;
+            --input-bg: #2c2c2c;
+            --primary: #8e44ad;
+            --primary-hover: #9b59b6;
+            
+            --chart-grid: #333333;
+            --chart-text: #a0a0a0;
+        }
+
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background-color: var(--bg-color); color: var(--text-main); display: flex; height: 100vh; overflow: hidden; transition: 0.3s; }
+        
+        .sidebar { width: 260px; background-color: var(--sidebar-bg); color: #ecf0f1; display: flex; flex-direction: column; transition: 0.3s; z-index: 10;}
+        .sidebar-header { padding: 25px 20px; background-color: var(--sidebar-header); font-size: 22px; font-weight: bold; border-bottom: 1px solid var(--border-color); text-align: center; color: var(--primary); transition: 0.3s; }
+        .menu-items { flex-grow: 1; }
+        .menu-item { padding: 15px 20px; cursor: pointer; transition: 0.3s; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .menu-item.active, .menu-item:hover { background-color: rgba(255,255,255,0.1); border-left: 4px solid var(--primary); }
+        
+        .sidebar-bottom { padding: 20px; text-align: center; border-top: 1px solid rgba(255,255,255,0.1); background-color: var(--sidebar-header); transition: 0.3s;}
+        .clock-display { font-family: 'Courier New', Courier, monospace; font-size: 26px; font-weight: bold; color: #2ecc71; letter-spacing: 2px; margin-bottom: 5px; }
+        .date-display { font-size: 13px; color: var(--text-muted); font-weight: bold; letter-spacing: 1.5px; margin-bottom: 15px; }
+        
+        .theme-btn { background-color: #34495e; color: white; border: none; padding: 10px; width: 100%; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.3s; display: flex; justify-content: center; align-items: center; gap: 8px;}
+        .theme-btn:hover { background-color: #7f8c8d; }
+
+        .main-content { flex: 1; padding: 30px; overflow-y: auto; position: relative; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid var(--border-color); padding-bottom: 15px;}
+        .header h1 { color: var(--text-main); margin:0;}
+        
+        .profile-contact { font-size: 12.5px; color: var(--text-muted); margin-top: 5px;}
+        .profile-contact a { color: var(--primary); text-decoration: none; font-weight: bold;}
+        
+        .logout-btn { background-color: #e74c3c; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.3s;}
+        .logout-btn:hover { background-color: #c0392b; }
+
+        /* KPI CARDS */
+        .grid-row { display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap; }
+        .card { background: var(--card-bg); padding: 20px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); flex: 1; min-width: 200px; border-top: 4px solid var(--primary); transition: 0.3s; display: flex; flex-direction: column; justify-content: center; text-align: center;}
+        .card h3 { margin: 0 0 10px 0; color: var(--text-muted); font-size: 13px; text-transform: uppercase; letter-spacing: 1px;}
+        .card .stat { font-size: 32px; font-weight: bold; color: var(--text-main); }
+        .card .trend { font-size: 12px; margin-top: 5px; font-weight: bold;}
+        .trend-up { color: #e74c3c; } 
+        .trend-down { color: #2ecc71; } 
+
+        /* CHART CARDS */
+        .chart-card { flex: 1; min-width: 300px; }
+        .chart-card h3 { margin: 0 0 15px 0; color: var(--text-main); font-size: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center;}
+        .chart-container { position: relative; height: 280px; width: 100%; }
+
+        /* BIOINFORMATICS PARSER */
+        .parser-box { border: 2px dashed var(--primary); background: rgba(155, 89, 182, 0.03); padding: 30px; border-radius: 10px; text-align: center; transition: 0.3s; margin-top: 20px;}
+        .parser-box:hover { background: rgba(155, 89, 182, 0.08); border-color: var(--primary-hover); }
+        .parser-icon { font-size: 40px; margin-bottom: 10px; }
+        .parser-title { font-size: 18px; font-weight: bold; color: var(--primary); margin-bottom: 5px; }
+        .parser-desc { font-size: 13px; color: var(--text-muted); margin-bottom: 20px;}
+        
+        .upload-btn { background-color: var(--primary); color: white; border: none; padding: 12px 25px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; transition: 0.3s;}
+        .upload-btn:hover { background-color: var(--primary-hover); transform: translateY(-2px); }
+
+        .progress-container { display: none; margin-top: 20px; text-align: left; }
+        .progress-bar-bg { width: 100%; height: 10px; background: var(--border-color); border-radius: 5px; overflow: hidden; margin-bottom: 5px;}
+        .progress-bar-fill { height: 100%; background: var(--primary); width: 0%; transition: width 0.2s ease;}
+        .progress-text { font-size: 12px; font-weight: bold; color: var(--primary); }
+
+        #parserResult { display: none; margin-top: 20px; padding: 20px; background: rgba(46, 204, 113, 0.05); border-left: 4px solid #2ecc71; border-radius: 6px; text-align: left; font-size: 14px; color: var(--text-main); line-height: 1.6;}
+        
+        /* VOLCANO PLOT BOX */
+        #volcanoContainer { display: none; margin-top: 20px; text-align: center; padding-top: 20px; border-top: 1px solid var(--border-color); }
+        #volcanoContainer .chart-container { height: 350px; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="sidebar-header">🧬 BioLab-MS</div>
+        
+        <div class="menu-items">
+            <div class="menu-item" onclick="window.location.href='researcher.html'">🔬 My Workspace</div>
+            <div class="menu-item" onclick="window.location.href='protocols.html'">🧪 Protocol Library</div>
+            <div class="menu-item active">📊 Data Analysis</div>
+            <div class="menu-item" onclick="window.location.href='biosafety-report.html'">⚠️ BioSafety Reports</div>
+        </div>
+
+        <div class="sidebar-bottom">
+            <div class="clock-display" id="realTimeClock">00:00:00</div>
+            <div class="date-display" id="realTimeDate">00.00.0000</div>
+            <button class="theme-btn" onclick="toggleTheme()" id="themeBtn">🌙 Enable Dark Mode</button>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="header">
+            <div>
+                <h1 style="margin:0;">Analytics & Performance Dashboard</h1>
+                <p style="margin:8px 0 0 0; font-size: 15px;">
+                    <span style="color: var(--primary); font-weight: bold; font-size: 18px;">Welcome, Dr. Alice Smith</span><br>
+                    <span style="display:inline-block; margin-top:5px;"><strong>Role:</strong> Lead Researcher | <strong>Staff ID:</strong> RES-4421 | <strong>Speciality:</strong> PCR Analysis Expert </span>
+                </p>
+                <div class="profile-contact">
+                    📧 <a href="mailto:a.smith@biolab.com">a.smith@biolab.com</a> | 📞 +1 555-0201
+                </div>
+            </div>
+            <div>
+                <button class="logout-btn" onclick="window.location.href='index.html'">Log Out</button>
+            </div>
+        </div>
+
+        <div class="grid-row">
+            <div class="card" style="border-top-color: #3498db;">
+                <h3>Total Processed Samples (Last 7 Days)</h3>
+                <div class="stat">1,284</div>
+                <div class="trend trend-down">↑ 12% increase vs last week</div>
+            </div>
+            <div class="card" style="border-top-color: #9b59b6;">
+                <h3>Avg Turnaround Time (TAT)</h3>
+                <div class="stat">4.2 Hrs</div>
+                <div class="trend trend-down">↓ 0.5 Hrs (Faster)</div>
+            </div>
+            <div class="card" style="border-top-color: #2ecc71;">
+                <h3>Clinical Report Generation Rate</h3>
+                <div class="stat" style="color: #2ecc71;">94%</div>
+                <div class="trend trend-down">Reported on time</div>
+            </div>
+        </div>
+
+        <div class="grid-row">
+            <div class="card chart-card" style="flex: 2;">
+                <h3>📊 Laboratory Turnaround Time (TAT) Trend</h3>
+                <div class="chart-container">
+                    <canvas id="tatChart"></canvas>
+                </div>
+            </div>
+            <div class="card chart-card" style="flex: 1;">
+                <h3>🔬 Analysis Type Distribution (Last 7 Days)</h3>
+                <div class="chart-container">
+                    <canvas id="distChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" style="border-top-color: #e67e22;">
+            <h3 style="font-size: 18px; color: var(--text-main); margin-top: 0;">🧬 Bioinformatics Raw Data Parser & Visualizer</h3>
+            <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 5px;">Fast data processing (FASTQ, CSV) and gene expression analysis.</p>
+            
+            <div class="parser-box" id="parserBox">
+                <div class="parser-icon">📁</div>
+                <div class="parser-title">Upload Sequencing or Microarray Data</div>
+                <div class="parser-desc">Supports .csv, .fastq, and .txt files. The AI parser will process the data and identify significant variants.</div>
+                
+                <button class="upload-btn" onclick="startParsing()" id="parseBtn">Upload & Analyze File</button>
+
+                <div class="progress-container" id="progressContainer">
+                    <div class="progress-text" id="progressText">Parsing genomic sequences... 0%</div>
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill" id="progressBar"></div>
+                    </div>
+                </div>
+
+                <div id="parserResult">
+                    <strong style="color:#2ecc71; font-size:16px;">✅ Parsing Complete!</strong><br><br>
+                    <strong>Processed File:</strong> <code>Patient_Cohort_RNAseq_Run04.fastq</code><br>
+                    <strong>Total Reads:</strong> 24,502,110<br>
+                    <strong>Mapping Rate:</strong> 98.2%<br>
+                    <strong>Significant Variants Found:</strong> 12 <i>(p-value < 0.05)</i><br><br>
+                    <button class="theme-btn" style="width:auto; padding:8px 16px; font-size:13px; background:#3498db;" onclick="generateVolcano()">📊 Generate Interactive Volcano Plot</button>
+                </div>
+
+                <div id="volcanoContainer">
+                    <h4 style="margin: 0 0 10px 0; color: var(--text-main);">Differential Gene Expression (Interactive Volcano Plot)</h4>
+                    <div class="chart-container">
+                        <canvas id="volcanoChart"></canvas>
+                    </div>
+                    <p style="font-size: 12px; color: var(--text-muted); margin-top: 10px;">Note: Red dots represent genes with significant differential expression (FDR < 0.05, log2FC > 1.5). Hover over points for details.</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('realTimeClock').innerText = now.toLocaleTimeString('en-US', { hour12: false });
+            const day = String(now.getDate()).padStart(2, '0');
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            document.getElementById('realTimeDate').innerText = `${day}.${month}.${now.getFullYear()}`;
+        }
+        setInterval(updateClock, 1000); updateClock();
+
+        function getChartTextColor() {
+            return document.body.classList.contains('dark-theme') ? '#a0a0a0' : '#7f8c8d';
+        }
+        function getChartGridColor() {
+            return document.body.classList.contains('dark-theme') ? '#333333' : '#ecf0f1';
+        }
+
+        let charts = [];
+
+        function toggleTheme() {
+            document.body.classList.toggle('dark-theme');
+            const isDark = document.body.classList.contains('dark-theme');
+            const btn = document.getElementById('themeBtn');
+            btn.innerHTML = isDark ? "☀️ Enable Light Mode" : "🌙 Enable Dark Mode";
+            btn.style.backgroundColor = isDark ? "#e67e22" : "#34495e";
+
+            charts.forEach(chart => {
+                if(chart.options.scales && chart.options.scales.x) {
+                    chart.options.scales.x.ticks.color = getChartTextColor();
+                    chart.options.scales.x.grid.color = getChartGridColor();
+                    chart.options.scales.y.ticks.color = getChartTextColor();
+                    chart.options.scales.y.grid.color = getChartGridColor();
+                }
+                if(chart.options.plugins && chart.options.plugins.legend) {
+                    chart.options.plugins.legend.labels.color = getChartTextColor();
+                }
+                chart.update();
+            });
+        }
+
+        window.onload = function() {
+            initCharts();
+        };
+
+        function initCharts() {
+            Chart.defaults.font.family = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
+            const textColor = getChartTextColor();
+            const gridColor = getChartGridColor();
+
+            // 1. Turnaround Time (Line Chart)
+            const ctxTat = document.getElementById('tatChart').getContext('2d');
+            const tatChart = new Chart(ctxTat, {
+                type: 'line',
+                data: {
+                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    datasets: [{
+                        label: 'Avg Processing Time (Hours)',
+                        data: [4.8, 4.5, 4.2, 4.6, 5.1, 4.4, 4.2],
+                        borderColor: '#3498db',
+                        backgroundColor: 'rgba(52, 152, 219, 0.2)',
+                        borderWidth: 3,
+                        tension: 0.4,
+                        fill: true,
+                        pointBackgroundColor: '#ffffff',
+                        pointBorderColor: '#3498db',
+                        pointRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: textColor } } },
+                    scales: {
+                        x: { ticks: { color: textColor }, grid: { color: gridColor } },
+                        y: { ticks: { color: textColor }, grid: { color: gridColor }, min: 3 }
+                    }
+                }
+            });
+            charts.push(tatChart);
+
+            // 2. Analysis Distribution (Doughnut Chart)
+            const ctxDist = document.getElementById('distChart').getContext('2d');
+            const distChart = new Chart(ctxDist, {
+                type: 'doughnut',
+                data: {
+                    labels: ['PCR Analysis', 'Next Gen Sequencing (NGS)', 'Electrophoresis'],
+                    datasets: [{
+                        data: [55, 30, 15],
+                        backgroundColor: ['#3498db', '#9b59b6', '#2ecc71'],
+                        borderWidth: 0,
+                        hoverOffset: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '65%',
+                    plugins: { 
+                        legend: { 
+                            position: 'bottom', 
+                            labels: { color: textColor, padding: 15, font: { size: 12 } } 
+                        } 
+                    }
+                }
+            });
+            charts.push(distChart);
+        }
+
+        // ==========================================
+        // BIOINFORMATICS PARSER SIMULATION
+        // ==========================================
+        function startParsing() {
+            const btn = document.getElementById("parseBtn");
+            const progressContainer = document.getElementById("progressContainer");
+            const progressBar = document.getElementById("progressBar");
+            const progressText = document.getElementById("progressText");
+            const resultBox = document.getElementById("parserResult");
+            const volcanoBox = document.getElementById("volcanoContainer");
+
+            btn.disabled = true;
+            btn.style.backgroundColor = "#95a5a6";
+            btn.innerText = "Analyzing file...";
+            
+            resultBox.style.display = "none";
+            volcanoBox.style.display = "none";
+            progressContainer.style.display = "block";
+            
+            let width = 0;
+            let currentFile = "Parsing genomic sequences...";
+            
+            const interval = setInterval(() => {
+                width += Math.floor(Math.random() * 8) + 2; 
+                if (width >= 100) width = 100;
+                
+                progressBar.style.width = width + '%';
+
+                if(width > 25 && width < 55) currentFile = "Mapping to reference genome (hg38)...";
+                if(width >= 55 && width < 85) currentFile = "Calculating p-values and fold changes...";
+                if(width >= 85) currentFile = "Generating Analysis Report...";
+
+                progressText.innerText = `${currentFile} ${width}%`;
+
+                if (width === 100) {
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        progressContainer.style.display = "none";
+                        resultBox.style.display = "block";
+                        btn.disabled = false;
+                        btn.style.backgroundColor = "var(--primary)";
+                        btn.innerText = "Upload Another File";
+                        progressBar.style.width = "0%";
+                    }, 600);
+                }
+            }, 120); 
+        }
+
+        // INTERACTIVE VOLCANO PLOT FUNCTION
+        function generateVolcano() {
+            const volcanoBox = document.getElementById("volcanoContainer");
+            volcanoBox.style.display = "block";
+            
+            if (window.volcanoChartInstance) {
+                window.volcanoChartInstance.destroy();
+            }
+
+            const ctx = document.getElementById('volcanoChart').getContext('2d');
+            const textColor = getChartTextColor();
+            const gridColor = getChartGridColor();
+
+            const sigData = [];
+            const nonSigData = [];
+
+            for (let i = 0; i < 400; i++) {
+                let x = (Math.random() - 0.5) * 8; 
+                let y = (Math.random() * 4) + (Math.random() * 2); 
+                
+                if (y > Math.abs(x) + 1) y = Math.abs(x) + (Math.random() * 1.5);
+
+                if (y > 1.3 && Math.abs(x) > 1.5) {
+                    sigData.push({x: parseFloat(x.toFixed(2)), y: parseFloat(y.toFixed(2))});
+                } else {
+                    nonSigData.push({x: parseFloat(x.toFixed(2)), y: parseFloat(y.toFixed(2))});
+                }
+            }
+
+            window.volcanoChartInstance = new Chart(ctx, {
+                type: 'scatter',
+                data: {
+                    datasets: [
+                        {
+                            label: 'Significant Genes (Upregulated/Downregulated)',
+                            data: sigData,
+                            backgroundColor: '#e74c3c',
+                            pointRadius: 5,
+                            pointHoverRadius: 8
+                        },
+                        {
+                            label: 'Non-Significant Genes',
+                            data: nonSigData,
+                            backgroundColor: '#bdc3c7',
+                            pointRadius: 3,
+                            pointHoverRadius: 5
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { labels: { color: textColor } },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `Gene_${Math.floor(Math.random()*9000)+1000} | Log2FC: ${context.parsed.x}, -Log10(p): ${context.parsed.y}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: { display: true, text: 'Log2 Fold Change', color: textColor, font: {weight: 'bold'} },
+                            ticks: { color: textColor },
+                            grid: { color: gridColor },
+                            min: -5, max: 5
+                        },
+                        y: {
+                            title: { display: true, text: '-Log10(p-value)', color: textColor, font: {weight: 'bold'} },
+                            ticks: { color: textColor },
+                            grid: { color: gridColor },
+                            min: 0, max: 7
+                        }
+                    }
+                }
+            });
+
+            charts.push(window.volcanoChartInstance);
+
+            setTimeout(() => {
+                volcanoBox.scrollIntoView({ behavior: 'smooth', block: 'end' });
+            }, 100);
+        }
+    </script>
+</body>
+</html>

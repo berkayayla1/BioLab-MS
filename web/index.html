@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BioLab-MS | Secure Login</title>
+    
+    <style>
+        :root {
+            --bg-dark: #0f171e;
+            --bg-light: #1a252f;
+            --card-bg: rgba(255, 255, 255, 0.92); 
+            --text-main: #2c3e50;
+            --text-muted: #7f8c8d;
+            --primary: #3498db;
+            --primary-hover: #2980b9;
+            --error: #e74c3c;
+            --success: #2ecc71;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, var(--bg-dark) 0%, var(--bg-light) 100%);
+            color: var(--text-main);
+            overflow: hidden; 
+        }
+
+        #particle-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+
+        .login-container {
+            position: relative;
+            z-index: 1; 
+            background-color: var(--card-bg);
+            backdrop-filter: blur(10px); 
+            -webkit-backdrop-filter: blur(10px);
+            width: 400px;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+            border-top: 6px solid var(--primary);
+            transition: transform 0.1s ease-in-out; 
+        }
+
+        .logo-section {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo-section h1 {
+            margin: 0;
+            font-size: 28px;
+            color: var(--text-main);
+            letter-spacing: 1px;
+        }
+
+        .logo-section p {
+            margin: 5px 0 0 0;
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            font-size: 13px;
+            color: var(--text-main);
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            box-sizing: border-box;
+            border: 1px solid #bdc3c7;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+            background-color: #f9fbfd;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--primary);
+            background-color: #ffffff;
+            box-shadow: 0 0 5px rgba(52, 152, 219, 0.3);
+        }
+
+        .login-btn {
+            width: 100%;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.1s;
+            margin-top: 10px;
+        }
+
+        .login-btn:hover {
+            background-color: var(--primary-hover);
+        }
+        
+        .login-btn:active {
+            transform: scale(0.98);
+        }
+
+        .status-message {
+            padding: 12px 10px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 20px;
+            display: none; 
+        }
+
+        .status-error {
+            color: var(--error);
+            background-color: rgba(231, 76, 60, 0.1);
+            border: 1px solid rgba(231, 76, 60, 0.3);
+        }
+
+        .status-success {
+            color: var(--success);
+            background-color: rgba(46, 204, 113, 0.1);
+            border: 1px solid rgba(46, 204, 113, 0.3);
+        }
+
+        .demo-box {
+            margin-top: 30px;
+            background-color: rgba(241, 242, 246, 0.8);
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #f39c12;
+            font-size: 13px;
+            color: #34495e;
+        }
+
+        .demo-box h4 {
+            margin: 0 0 10px 0;
+            color: #d35400;
+            font-size: 14px;
+        }
+
+        .demo-box ul {
+            margin: 0;
+            padding-left: 20px;
+            line-height: 1.6;
+        }
+        
+        .demo-box li {
+            margin-bottom: 5px;
+        }
+
+        .demo-box code {
+            background: #e1e5e8;
+            padding: 2px 5px;
+            border-radius: 4px;
+            font-weight: bold;
+            color: var(--primary);
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="particle-canvas"></canvas>
+
+    <div class="login-container" id="loginContainer">
+        <div class="logo-section">
+            <h1>🧬 BioLab-MS</h1>
+            <p>Laboratory Management System v2.0</p>
+        </div>
+
+        <div id="statusMsg" class="status-message"></div>
+
+        <form id="loginForm" onsubmit="handleLogin(event)">
+            <div class="form-group">
+                <label for="email">Staff Email Address</label>
+                <input type="text" id="email" placeholder="e.g., c.harper@biolab.com" required autocomplete="email">
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" placeholder="••••" required>
+            </div>
+
+            <button type="submit" id="loginBtn" class="login-btn">Secure Login ➔</button>
+        </form>
+
+        <div class="demo-box">
+            <h4>🧪 Demo Accounts (Pass: 1234)</h4>
+            <ul>
+                <li><code>c.harper@biolab.com</code> (Lab Manager)</li>
+                <li><code>a.smith@biolab.com</code> (Lead Researcher)</li>
+                <li><code>j.doe@biolab.com</code> (Lab Technician)</li>
+                <li><code>m.taylor@biolab.com</code> (BioSafety Officer)</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        
+        const canvas = document.getElementById('particle-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.vx = (Math.random() - 0.5) * 0.8; 
+                this.vy = (Math.random() - 0.5) * 0.8;
+                this.radius = Math.random() * 2 + 1;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+
+                if (this.x < 0 || this.x > canvas.width) this.vx = -this.vx;
+                if (this.y < 0 || this.y > canvas.height) this.vy = -this.vy;
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(52, 152, 219, 0.5)';
+                ctx.fill();
+            }
+        }
+
+        const particleCount = Math.floor(window.innerWidth / 15); 
+        for (let i = 0; i < particleCount; i++) {
+            particles.push(new Particle());
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+
+            for (let i = 0; i < particles.length; i++) {
+                for (let j = i + 1; j < particles.length; j++) {
+                    const dx = particles[i].x - particles[j].x;
+                    const dy = particles[i].y - particles[j].y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance < 120) {
+                        ctx.beginPath();
+                        ctx.strokeStyle = `rgba(52, 152, 219, ${1 - distance / 120})`;
+                        ctx.lineWidth = 0.5;
+                        ctx.moveTo(particles[i].x, particles[i].y);
+                        ctx.lineTo(particles[j].x, particles[j].y);
+                        ctx.stroke();
+                    }
+                }
+            }
+            requestAnimationFrame(animate);
+        }
+        animate();
+
+        
+        function showError(message) {
+            const statusMsg = document.getElementById('statusMsg');
+            const container = document.getElementById('loginContainer');
+            
+            statusMsg.className = 'status-message status-error';
+            statusMsg.innerHTML = `❌ ${message}`;
+            statusMsg.style.display = 'block';
+            
+            // Titreme efekti (Shaker)
+            container.style.transform = 'translateX(-10px)';
+            setTimeout(() => container.style.transform = 'translateX(10px)', 50);
+            setTimeout(() => container.style.transform = 'translateX(-10px)', 100);
+            setTimeout(() => container.style.transform = 'translateX(10px)', 150);
+            setTimeout(() => container.style.transform = 'translateX(0)', 200);
+        }
+
+        function showSuccess(message, redirectUrl) {
+            const statusMsg = document.getElementById('statusMsg');
+            const btn = document.getElementById('loginBtn');
+            
+            
+            statusMsg.className = 'status-message status-success';
+            statusMsg.innerHTML = `✅ ${message}`;
+            statusMsg.style.display = 'block';
+            
+            
+            btn.disabled = true;
+            btn.innerHTML = "Redirecting... ⏳";
+            btn.style.backgroundColor = "#2ecc71";
+
+            
+            setTimeout(() => {
+                window.location.href = redirectUrl;
+            }, 1200);
+        }
+
+        function handleLogin(event) {
+            event.preventDefault(); 
+            
+            const emailInput = document.getElementById('email').value.trim().toLowerCase();
+            const passwordInput = document.getElementById('password').value;
+            const statusMsg = document.getElementById('statusMsg');
+
+            
+            statusMsg.style.display = 'none';
+
+            
+            if (passwordInput !== '1234') {
+                showError("Access Denied: Invalid Email or Password.");
+                return;
+            }
+
+            
+            if (emailInput === 'c.harper@biolab.com') {
+                showSuccess("Login Successful! Preparing Manager Dashboard...", 'manager.html');
+            
+            } else if (emailInput === 'a.smith@biolab.com') {
+                showSuccess("Login Successful! Preparing Researcher Console...", 'researcher.html');
+            
+            } else if (emailInput === 'j.doe@biolab.com') {
+                showSuccess("Login Successful! Preparing Technician Station...", 'technician.html');
+            
+            } else if (emailInput === 'm.taylor@biolab.com') {
+                showSuccess("Login Successful! Preparing BioSafety Terminal...", 'officer.html');
+            
+            } else {
+                showError("Access Denied: Invalid Email or Password.");
+            }
+        }
+    </script>
+
+</body>
+</html>

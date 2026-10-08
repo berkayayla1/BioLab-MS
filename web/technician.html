@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BioLab-MS | Technician Station</title>
+
+    <style>
+        :root {
+            --bg-color: #f4f6f8;
+            --card-bg: #ffffff;
+            --text-main: #2c3e50;
+            --text-muted: #7f8c8d;
+            --border-color: #ecf0f1;
+            --sidebar-bg: #1a252f;
+            --sidebar-header: #0f171e;
+            --table-head-bg: #f8f9fa;
+            --table-hover: #f1f2f6;
+            --input-bg: #ffffff;
+            
+            /* Green Theme for Technician */
+            --primary: #2ecc71; 
+            --primary-hover: #27ae60;
+            --fee-color: #27ae60;
+            
+            /* Action Colors */
+            --action-blue: #3498db;
+            --action-blue-hover: #2980b9;
+            --danger: #e74c3c;
+            --warning: #f39c12;
+            --info: #9b59b6;
+
+            /* Type/Analysis Colors */
+            --dna-color: #3498db;
+            --rna-color: #9b59b6;
+            --protein-color: #2ecc71;
+            --pcr-color: #f39c12;
+            --ngs-color: #e74c3c;
+            --electrophoresis-color: #7f8c8d;
+        }
+
+        body.dark-theme {
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --text-main: #e0e0e0;
+            --text-muted: #a0a0a0;
+            --border-color: #333333;
+            --sidebar-bg: #0a0a0a;
+            --sidebar-header: #000000;
+            --table-head-bg: #2c2c2c;
+            --table-hover: #2a2a2a;
+            --input-bg: #2c2c2c;
+            --primary: #27ae60;
+        }
+
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background-color: var(--bg-color); color: var(--text-main); display: flex; height: 100vh; overflow: hidden; transition: 0.3s; }
+        
+        .sidebar { width: 260px; background-color: var(--sidebar-bg); color: #ecf0f1; display: flex; flex-direction: column; transition: 0.3s; }
+        .sidebar-header { padding: 25px 20px; background-color: var(--sidebar-header); font-size: 22px; font-weight: bold; border-bottom: 1px solid var(--border-color); text-align: center; color: var(--primary); transition: 0.3s; }
+        .menu-items { flex-grow: 1; }
+        .menu-item { padding: 15px 20px; cursor: pointer; transition: 0.3s; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .menu-item.active, .menu-item:hover { background-color: rgba(255,255,255,0.1); border-left: 4px solid var(--primary); }
+        
+        .sidebar-bottom { padding: 20px; text-align: center; border-top: 1px solid rgba(255,255,255,0.1); background-color: var(--sidebar-header); transition: 0.3s;}
+        .clock-display { font-family: 'Courier New', Courier, monospace; font-size: 26px; font-weight: bold; color: var(--primary); letter-spacing: 2px; margin-bottom: 5px; text-shadow: 0 0 5px rgba(46, 204, 113, 0.5);}
+        .date-display { font-size: 13px; color: var(--text-muted); font-weight: bold; letter-spacing: 1.5px; margin-bottom: 15px; }
+        
+        .theme-btn { background-color: #34495e; color: white; border: none; padding: 10px; width: 100%; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.3s; display: flex; justify-content: center; align-items: center; gap: 8px;}
+        .theme-btn:hover { background-color: #7f8c8d; }
+
+        .main-content { flex: 1; padding: 30px; overflow-y: auto; position: relative; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid var(--border-color); padding-bottom: 15px;}
+        .header h1 { color: var(--text-main); margin:0;}
+        
+        .profile-contact { font-size: 12.5px; color: var(--text-muted); margin-top: 5px;}
+        .profile-contact a { color: var(--primary); text-decoration: none; font-weight: bold;}
+        
+        .logout-btn { background-color: var(--danger); color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.3s;}
+        .logout-btn:hover { background-color: #c0392b; }
+
+        .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; background: var(--card-bg); padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.02); border-left: 4px solid var(--primary);}
+        .date-filter { background: var(--input-bg); color: var(--text-main); padding: 10px 15px; border-radius: 8px; border: 1px solid var(--border-color); font-weight: bold; outline: none; cursor: pointer; transition: 0.3s;}
+        
+        .add-btn { background-color: var(--action-blue); color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.3s; display: flex; align-items: center; gap: 8px;}
+        .add-btn:hover { background-color: var(--action-blue-hover); transform: translateY(-1px); }
+
+        .grid-row { display: flex; gap: 20px; margin-bottom: 20px; }
+        .card { background: var(--card-bg); padding: 20px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); flex: 1; border-top: 4px solid var(--primary); transition: 0.3s; text-align: center; display: flex; flex-direction: column; justify-content: center;}
+        .card h3 { margin: 0 0 10px 0; color: var(--text-muted); font-size: 14px; text-transform: uppercase; letter-spacing: 1px;}
+        .card .stat { font-size: 38px; font-weight: bold; color: var(--text-main); }
+        
+        .table-container { background: var(--card-bg); padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: 0.3s;}
+        .table-container h3 { color: var(--text-main); margin-top: 0; border-bottom: 2px solid var(--border-color); padding-bottom: 10px;}
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13.5px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border-color); vertical-align: middle;}
+        th { background-color: var(--table-head-bg); color: var(--text-main); font-weight: bold; }
+        tr:hover { background-color: var(--table-hover); }
+        
+        .badge-pill { padding: 5px 12px; border-radius: 15px; font-size: 11px; font-weight: bold; color: white; display: inline-block; text-align: center; }
+        .bg-dna { background-color: var(--danger); } 
+        .bg-rna { background-color: var(--warning); } 
+        .bg-protein { background-color: #34495e; } 
+        .bg-pcr { background-color: var(--action-blue); } 
+        .bg-ngs { background-color: var(--info); } 
+        .bg-electro { background-color: var(--primary); } 
+
+        .status-badge { padding: 5px 10px; border-radius: 4px; font-size: 11px; font-weight: bold; color: white; display: inline-block; width: 110px; text-align: center;}
+        .st-queue { background: #95a5a6; } 
+        .st-isolating { background: var(--warning); } 
+        .st-analyzing { background: var(--action-blue); } 
+        .st-reporting { background: var(--info); } 
+        .st-completed { background: var(--primary); } 
+        .st-invalid { background: var(--danger); } 
+
+        .custom-tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: help;
+        }
+        .custom-tooltip .tooltip-text {
+            visibility: hidden;
+            width: 220px;
+            background-color: var(--danger);
+            color: #fff;
+            text-align: center;
+            border-radius: 8px;
+            padding: 10px;
+            position: absolute;
+            z-index: 100;
+            bottom: 130%;
+            left: 50%;
+            margin-left: -110px;
+            opacity: 0;
+            transition: opacity 0.3s, bottom 0.3s;
+            font-size: 12px;
+            font-weight: normal;
+            box-shadow: 0 5px 15px rgba(231, 76, 60, 0.4);
+            pointer-events: none;
+            line-height: 1.4;
+        }
+        .custom-tooltip .tooltip-text::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -6px;
+            border-width: 6px;
+            border-style: solid;
+            border-color: var(--danger) transparent transparent transparent;
+        }
+        .custom-tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+            bottom: 140%;
+        }
+
+        .fee-badge { padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; display: inline-block; text-align: center; border: 1px solid;}
+        .fee-unpaid { background: rgba(231, 76, 60, 0.1); color: var(--danger); border-color: var(--danger);}
+        .fee-paid { background: rgba(46, 204, 113, 0.1); color: var(--primary); border-color: var(--primary);}
+
+        .action-group { display: flex; gap: 5px; justify-content: center; }
+        .action-btn { color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 11.5px; font-weight: bold; transition: 0.3s; display: flex; align-items: center; gap: 4px;}
+        .btn-process { background-color: var(--action-blue); } .btn-process:hover { background-color: var(--action-blue-hover); }
+        .btn-fee { background-color: var(--fee-color); } .btn-fee:hover { background-color: #219a52; }
+        .btn-edit { background-color: var(--warning); } .btn-edit:hover { background-color: #d35400; }
+        .btn-disabled { background-color: #bdc3c7; cursor: not-allowed; }
+
+        .pagination { display: flex; justify-content: center; align-items: center; gap: 15px; margin-top: 15px; }
+        .page-btn { padding: 8px 15px; border: none; background: #34495e; color: white; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.2s;}
+        .page-btn:hover:not(:disabled) { background: var(--primary); }
+        .page-btn:disabled { background: var(--border-color); color: var(--text-muted); cursor: not-allowed; }
+        .page-info { font-weight: bold; color: var(--text-main); }
+
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); justify-content: center; align-items: center; }
+        .modal-content { background-color: var(--card-bg); padding: 30px; border-radius: 10px; width: 600px; box-shadow: 0 5px 25px rgba(0,0,0,0.5); position: relative; transition: 0.3s;}
+        .close-btn { position: absolute; top: 15px; right: 20px; font-size: 24px; cursor: pointer; color: var(--text-muted); }
+        .close-btn:hover { color: var(--danger); }
+        
+        .modal-header { border-bottom: 2px solid var(--primary); padding-bottom: 10px; margin-bottom: 20px;}
+        .modal-header h2 { margin: 0; color: var(--primary); }
+
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-weight: bold; font-size: 12.5px; color: var(--text-main); margin-bottom: 5px; }
+        .form-control { width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 6px; background-color: var(--input-bg); color: var(--text-main); font-family: inherit; font-size: 13px; box-sizing: border-box; transition: 0.3s;}
+        .form-control:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 3px rgba(46, 204, 113, 0.2); }
+        .form-control.error { border-color: var(--danger); box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.2); }
+        .form-row { display: flex; gap: 15px; }
+        .form-row > div { flex: 1; }
+
+        .submit-btn { background-color: var(--primary); color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; font-size: 14px; transition: 0.3s; margin-top: 10px;}
+        .submit-btn:hover { filter: brightness(0.9); }
+
+        .toast { visibility: hidden; min-width: 250px; background-color: var(--primary); color: #fff; text-align: center; border-radius: 8px; padding: 16px; position: fixed; z-index: 2000; left: 50%; bottom: 30px; transform: translateX(-50%); font-size: 15px; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.2); opacity: 0; transition: opacity 0.3s, bottom 0.3s; }
+        .toast.show { visibility: visible; opacity: 1; bottom: 50px; }
+        .toast.error { background-color: var(--danger); }
+    </style>
+</head>
+<body>
+
+    <div id="toast" class="toast">✅ Action Successful!</div>
+
+    <div class="sidebar">
+        <div class="sidebar-header">🧬 BioLab-MS</div>
+        <div class="menu-items">
+            <div class="menu-item active" onclick="window.location.href='technician.html'">📋 Daily Operations</div>
+            <div class="menu-item" onclick="window.location.href='technician-biosafety.html'">⚠️ BioSafety Logs</div>
+        </div>
+
+        <div class="sidebar-bottom">
+            <div class="clock-display" id="realTimeClock">00:00:00</div>
+            <div class="date-display" id="realTimeDate">00.00.0000</div>
+            <button class="theme-btn" onclick="toggleTheme()" id="themeBtn">🌙 Enable Dark Mode</button>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="header">
+            <div>
+                <h1 style="margin:0;">BioSafety & Compliance Logs</h1>
+                <p style="margin:8px 0 0 0; font-size: 15px;">
+                    <span style="color: var(--primary); font-weight: bold; font-size: 18px;" id="currentTechUser">Welcome, John Doe</span><br>
+                    <span style="display:inline-block; margin-top:5px; color: var(--text-main);">
+                        <strong>Role:</strong> Lab Technician | 
+                        <strong>Staff ID:</strong> TEC-8802 | 
+                        <strong>Technical Level:</strong> Level 3 (Senior)
+                    </span>
+                </p>
+                <div class="profile-contact">
+                    📧 <a href="mailto:j.doe@biolab.com">j.doe@biolab.com</a> | 📞 +1 555-0304
+                </div>
+            </div>
+            <div class="btn-group">
+                <button class="logout-btn" onclick="window.location.href='index.html'">Log Out</button>
+            </div>
+        </div>
+
+        <div class="toolbar">
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <h2 style="margin:0;">📅 Workload Log</h2>
+                <input type="date" id="dateFilter" class="date-filter" onchange="filterDataByDate()">
+            </div>
+            <button class="add-btn" onclick="openAddSampleModal()">➕ Register New Sample</button>
+        </div>
+
+        <div class="grid-row">
+            <div class="card" style="border-top-color: #34495e;">
+                <h3>Total Assigned Today</h3>
+                <div class="stat" id="kpiTotal">0</div>
+            </div>
+            <div class="card" style="border-top-color: var(--warning);">
+                <h3>In Processing</h3>
+                <div class="stat" id="kpiPending" style="color: var(--warning);">0</div>
+            </div>
+            <div class="card" style="border-top-color: var(--danger);">
+                <h3>Invalid / Rejected</h3>
+                <div class="stat" id="kpiInvalid" style="color: var(--danger);">0</div>
+            </div>
+            <div class="card" style="border-top-color: var(--primary);">
+                <h3>Completed Tasks</h3>
+                <div class="stat" id="kpiCompleted" style="color: var(--primary);">0</div>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <h3>📋 Current Sample Queue</h3>
+            <table id="sampleTable">
+                <thead>
+                    <tr>
+                        <th>Sample ID</th>
+                        <th>Type / Analysis</th>
+                        <th>Client / Patient</th>
+                        <th>Lab Technician / Lead Researcher</th>
+                        <th style="text-align: center;">Fee Status</th>
+                        <th style="text-align: center;">Workflow Status</th>
+                        <th style="text-align: center;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    </tbody>
+            </table>
+            
+            <div class="pagination">
+                <button type="button" class="page-btn" id="prevBtn" onclick="changePage(-1)">◀ Previous</button>
+                <span class="page-info" id="pageInfo">Page 1 of 2</span>
+                <button type="button" class="page-btn" id="nextBtn" onclick="changePage(1)">Next ▶</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="dynamicModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal()">&times;</span>
+            <div class="modal-header">
+                <h2 id="modalTitle">⚙️ Task Action</h2>
+            </div>
+            
+            <div id="modalFormContent">
+                </div>
+        </div>
+    </div>
+
+    <script>
+        const ACTIVE_USER = "John Doe"; 
+
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('realTimeClock').innerText = now.toLocaleTimeString('en-US', { hour12: false });
+            const day = String(now.getDate()).padStart(2, '0');
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            document.getElementById('realTimeDate').innerText = `${day}.${month}.${now.getFullYear()}`;
+        }
+        setInterval(updateClock, 1000); updateClock();
+
+        function toggleTheme() {
+            document.body.classList.toggle('dark-theme');
+            const btn = document.getElementById('themeBtn');
+            btn.innerHTML = document.body.classList.contains('dark-theme') ? "☀️ Enable Light Mode" : "🌙 Enable Dark Mode";
+            btn.style.backgroundColor = document.body.classList.contains('dark-theme') ? "#e67e22" : "#34495e";
+        }
+
+        function getFormattedDate(daysAgo) {
+            const date = new Date();
+            date.setDate(date.getDate() - daysAgo);
+            return date.toISOString().split('T')[0];
+        }
+
+        const dateToday = getFormattedDate(0);      
+        const dateYesterday = getFormattedDate(1);
+        const date2DaysAgo = getFormattedDate(2);
+        const date3DaysAgo = getFormattedDate(3);
+
+        let allSamples = generateMockData();
+        let filteredSamples = [];
+        let currentPage = 1;
+        const itemsPerPage = 5;
+
+        window.onload = function() {
+            document.getElementById("dateFilter").value = dateToday;
+            filterDataByDate();
+        };
+
+        function generateMockData() {
+            const dates = [dateToday, dateYesterday, date2DaysAgo, date3DaysAgo];
+            const types = ["DNA", "RNA", "Protein"];
+            const anals = {"DNA": ["PCR", "NGS"], "RNA": ["PCR", "NGS", "Electrophoresis"], "Protein": ["Electrophoresis"]};
+            const clients = ["Clinica Health", "GenCorp Labs", "City Hospital", "Private Patient", "Central Clinic"];
+            const techs = ["John Doe", "Sarah Connor", "Michael Scott", "Jane Roe"];
+            const reses = ["Dr. Alice Smith", "Dr. Bob Clarke", "Dr. James Wilson", "Dr. Emily Davis"];
+            const statuses = ["In Queue", "Isolating", "Analyzing", "Reporting", "Completed", "Invalid"];
+            
+            let data = [];
+            let idCounter = 1001;
+
+            dates.forEach((d, dateIndex) => {
+                for(let i = 0; i < 8; i++) {
+                    let type = types[Math.floor(Math.random() * types.length)];
+                    let possibleAnals = anals[type];
+                    let analysis = possibleAnals[Math.floor(Math.random() * possibleAnals.length)];
+                    let fee = analysis === "NGS" ? 850 : (analysis === "PCR" ? 150 : 75);
+                    
+                    let status = "Completed";
+                    if (dateIndex === 0) {
+                        status = statuses[Math.floor(Math.random() * 6)]; 
+                    } else if (dateIndex === 1) {
+                        status = Math.random() > 0.4 ? "Completed" : (Math.random() > 0.5 ? "Invalid" : "Reporting"); 
+                    } else {
+                        status = Math.random() > 0.8 ? "Invalid" : "Completed";
+                    }
+
+                    // Dinamik not üretimi
+                    let tNote = "";
+                    if(status === "Invalid") {
+                        tNote = ["Insufficient sample volume.", "Sample degraded upon arrival.", "Tube cracked during centrifugation."][Math.floor(Math.random()*3)];
+                    } else if (status !== "In Queue") {
+                        tNote = "Standard processing protocols initiated.";
+                    }
+
+                    data.push({
+                        id: "SMP-" + idCounter++,
+                        date: d,
+                        type: type,
+                        analysis: analysis,
+                        client: clients[Math.floor(Math.random() * clients.length)],
+                        technician: techs[Math.floor(Math.random() * techs.length)],
+                        researcher: reses[Math.floor(Math.random() * reses.length)],
+                        status: status,
+                        feeAmount: fee,
+                        feePaid: status === "Completed" || Math.random() > 0.3, 
+                        techNote: tNote,
+                        researcherReport: status === "Completed" ? "Analysis finished successfully. Results verified." : ""
+                    });
+                }
+            });
+            return data;
+        }
+
+        function filterDataByDate() {
+            const selectedDate = document.getElementById("dateFilter").value;
+            filteredSamples = allSamples.filter(s => s.date === selectedDate);
+            
+            currentPage = 1; 
+            updateKPIs();
+            renderTable();
+        }
+
+        function updateKPIs() {
+            document.getElementById('kpiTotal').innerText = filteredSamples.length;
+            document.getElementById('kpiPending').innerText = filteredSamples.filter(s => ["Isolating", "Analyzing", "Reporting"].includes(s.status)).length;
+            document.getElementById('kpiInvalid').innerText = filteredSamples.filter(s => s.status === "Invalid").length;
+            document.getElementById('kpiCompleted').innerText = filteredSamples.filter(s => s.status === "Completed").length;
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById("tableBody");
+            tbody.innerHTML = "";
+
+            const totalPages = Math.ceil(filteredSamples.length / itemsPerPage);
+
+            if (filteredSamples.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 20px; color: var(--text-muted);">No assigned samples for this date.</td></tr>`;
+                document.getElementById("pageInfo").innerText = "Page 1 of 1";
+                document.getElementById("prevBtn").disabled = true;
+                document.getElementById("nextBtn").disabled = true;
+                return;
+            }
+
+            document.getElementById("pageInfo").innerText = `Page ${currentPage} of ${totalPages}`;
+            document.getElementById("prevBtn").disabled = (currentPage <= 1);
+            document.getElementById("nextBtn").disabled = (currentPage >= totalPages);
+
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const paginatedItems = filteredSamples.slice(startIndex, startIndex + itemsPerPage);
+
+            paginatedItems.forEach(sample => {
+                let statusClass = "st-queue";
+                if(sample.status === "Isolating") statusClass = "st-isolating";
+                if(sample.status === "Analyzing") statusClass = "st-analyzing";
+                if(sample.status === "Reporting") statusClass = "st-reporting";
+                if(sample.status === "Completed") statusClass = "st-completed";
+                if(sample.status === "Invalid") statusClass = "st-invalid"; 
+
+                let feeUI = sample.feePaid 
+                    ? `<span class="fee-badge fee-paid">Paid ($${sample.feeAmount})</span>` 
+                    : `<span class="fee-badge fee-unpaid">Unpaid ($${sample.feeAmount})</span>`;
+
+                let typeClass = sample.type === "DNA" ? "bg-dna" : (sample.type === "RNA" ? "bg-rna" : "bg-protein");
+                let analysisClass = sample.analysis === "PCR" ? "bg-pcr" : (sample.analysis === "NGS" ? "bg-ngs" : "bg-electro");
+
+                let btnProcess = `<button class="action-btn btn-process" onclick="openProcessModal('${sample.id}')">🧪 Process</button>`;
+                let btnFee = `<button class="action-btn btn-fee" onclick="openFeeModal('${sample.id}')">💳 Collect</button>`;
+                let btnEdit = `<button class="action-btn btn-edit" onclick="openEditModal('${sample.id}')">✏️ Edit</button>`;
+
+                if (sample.feePaid) {
+                    btnFee = ""; 
+                }
+
+                let statusHTML = `<span class="status-badge ${statusClass}">${sample.status}</span>`;
+                if (sample.status === "Invalid") {
+                    statusHTML = `
+                        <div class="custom-tooltip">
+                            <span class="status-badge ${statusClass}" style="cursor:help;">Invalid ℹ️</span>
+                            <span class="tooltip-text">
+                                <strong>Rejection Reason:</strong><br>
+                                ${sample.techNote}
+                            </span>
+                        </div>
+                    `;
+                }
+
+                const row = `
+                    <tr>
+                        <td><strong>${sample.id}</strong></td>
+                        <td>
+                            <span class="badge-pill ${typeClass}">${sample.type}</span>
+                            <span class="badge-pill ${analysisClass}" style="margin-left:5px;">${sample.analysis}</span>
+                        </td>
+                        <td>${sample.client}</td>
+                        <td>
+                            <div style="font-size:10px; color:var(--text-muted); text-transform:uppercase; margin-bottom: 2px;">Lab Technician</div>
+                            <strong style="display:block; margin-bottom:6px;">👨‍🔬 ${sample.technician}</strong>
+                            <div style="font-size:10px; color:var(--text-muted); text-transform:uppercase; margin-bottom: 2px;">Lead Researcher</div>
+                            <strong>👩‍⚕️ ${sample.researcher}</strong>
+                        </td>
+                        <td style="text-align: center;">${feeUI}</td>
+                        <td style="text-align: center; overflow: visible;">${statusHTML}</td>
+                        <td style="text-align: center;">
+                            <div class="action-group">
+                                ${btnProcess}
+                                ${btnFee}
+                                ${btnEdit}
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+        }
+
+        function changePage(direction) {
+            const totalPages = Math.ceil(filteredSamples.length / itemsPerPage);
+            if ((direction === 1 && currentPage < totalPages) || (direction === -1 && currentPage > 1)) {
+                currentPage += direction;
+                renderTable();
+            }
+        }
+
+        let activeSampleId = "";
+
+        function closeModal() {
+            document.getElementById('dynamicModal').style.display = "none";
+        }
+
+        function showToast(msg, type="success") {
+            const toast = document.getElementById("toast");
+            toast.innerText = msg;
+            toast.style.backgroundColor = type === "error" ? "var(--danger)" : "var(--primary)";
+            toast.className = "toast show";
+            setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 3000);
+        }
+
+        function getTechnicianOptions(current = "") {
+            const isSel = (n) => n === current ? "selected" : "";
+            return `
+                <option value="John Doe" ${isSel("John Doe")}>John Doe</option>
+                <option value="Sarah Connor" ${isSel("Sarah Connor")}>Sarah Connor</option>
+                <option value="Michael Scott" ${isSel("Michael Scott")}>Michael Scott</option>
+                <option value="Jane Roe" ${isSel("Jane Roe")}>Jane Roe</option>
+            `;
+        }
+
+        function getResearcherOptions(current = "") {
+            const isSel = (n) => n === current ? "selected" : "";
+            return `
+                <option value="Dr. Alice Smith" ${isSel("Dr. Alice Smith")}>Dr. Alice Smith</option>
+                <option value="Dr. Bob Clarke" ${isSel("Dr. Bob Clarke")}>Dr. Bob Clarke</option>
+                <option value="Dr. James Wilson" ${isSel("Dr. James Wilson")}>Dr. James Wilson</option>
+                <option value="Dr. Emily Davis" ${isSel("Dr. Emily Davis")}>Dr. Emily Davis</option>
+            `;
+        }
+
+        function getStatusOptions(current = "") {
+            const isSel = (n) => n === current ? "selected" : "";
+            return `
+                <option value="In Queue" ${isSel("In Queue")}>In Queue</option>
+                <option value="Isolating" ${isSel("Isolating")}>Isolating</option>
+                <option value="Analyzing" ${isSel("Analyzing")}>Analyzing</option>
+                <option value="Reporting" ${isSel("Reporting")}>Reporting</option>
+                <option value="Completed" ${isSel("Completed")}>Completed</option>
+                <option value="Invalid" ${isSel("Invalid")}>Invalid (Rejected)</option>
+            `;
+        }
+
+        function openAddSampleModal() {
+            activeSampleId = "";
+            document.getElementById('modalTitle').innerText = "➕ Register New Sample";
+            document.getElementById('modalFormContent').innerHTML = `
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Sample Type</label>
+                        <select id="m_type" class="form-control">
+                            <option value="DNA">DNA</option>
+                            <option value="RNA">RNA</option>
+                            <option value="Protein">Protein</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Target Analysis</label>
+                        <select id="m_analysis" class="form-control" onchange="updateFeeEstimate()">
+                            <option value="PCR">PCR ($150)</option>
+                            <option value="NGS">NGS ($850)</option>
+                            <option value="Electrophoresis">Electrophoresis ($75)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Client / Patient Name</label>
+                    <input type="text" id="m_client" class="form-control" placeholder="e.g., General Hospital">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Assign Technician</label>
+                        <select id="m_technician" class="form-control">
+                            ${getTechnicianOptions(ACTIVE_USER)}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Assign Researcher</label>
+                        <select id="m_researcher" class="form-control">
+                            ${getResearcherOptions()}
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Assigned Fee ($)</label>
+                    <input type="number" id="m_fee" class="form-control" value="150" readonly style="background:rgba(0,0,0,0.05);">
+                </div>
+                <button class="submit-btn" onclick="executeAddSample()">Save Sample to Queue</button>
+            `;
+            document.getElementById('dynamicModal').style.display = "flex";
+        }
+
+        function updateFeeEstimate() {
+            const analysis = document.getElementById("m_analysis").value;
+            let fee = 150;
+            if(analysis === "NGS") fee = 850;
+            if(analysis === "Electrophoresis") fee = 75;
+            document.getElementById("m_fee").value = fee;
+        }
+
+        function executeAddSample() {
+            const newId = "SMP-10" + (allSamples.length + 10);
+            const type = document.getElementById("m_type").value;
+            const analysis = document.getElementById("m_analysis").value;
+            const client = document.getElementById("m_client").value || "Unknown Client";
+            const tech = document.getElementById("m_technician").value;
+            const res = document.getElementById("m_researcher").value;
+            const fee = parseInt(document.getElementById("m_fee").value);
+
+            allSamples.unshift({
+                id: newId, date: document.getElementById("dateFilter").value,
+                type: type, analysis: analysis, client: client, 
+                technician: tech, researcher: res,
+                status: "In Queue", feeAmount: fee, feePaid: false,
+                techNote: "", researcherReport: ""
+            });
+
+            closeModal();
+            filterDataByDate();
+            showToast("✅ Sample Successfully Registered!");
+        }
+
+        function openEditModal(id) {
+            const sample = allSamples.find(s => s.id === id);
+            activeSampleId = id;
+            document.getElementById('modalTitle').innerText = `✏️ Edit Sample: ${id}`;
+            document.getElementById('modalFormContent').innerHTML = `
+                <div class="form-group">
+                    <label>Client / Patient Name</label>
+                    <input type="text" id="e_client" class="form-control" value="${sample.client}">
+                </div>
+                <div class="form-group">
+                    <label>Adjust Fee Amount ($)</label>
+                    <input type="number" id="e_fee" class="form-control" value="${sample.feeAmount}" ${sample.feePaid ? 'readonly' : ''}>
+                </div>
+                <button class="submit-btn" style="background-color: #f39c12;" onclick="executeEditSample()">Update Details</button>
+            `;
+            document.getElementById('dynamicModal').style.display = "flex";
+        }
+
+        function executeEditSample() {
+            const sample = allSamples.find(s => s.id === activeSampleId);
+            sample.client = document.getElementById("e_client").value;
+            if (!sample.feePaid) {
+                sample.feeAmount = parseInt(document.getElementById("e_fee").value);
+            }
+            closeModal();
+            renderTable();
+            updateKPIs();
+            showToast("✅ Sample Details Updated!");
+        }
+
+        function openFeeModal(id) {
+            const sample = allSamples.find(s => s.id === id);
+            activeSampleId = id;
+            document.getElementById('modalTitle').innerText = `💳 Collect Processing Fee`;
+            document.getElementById('modalFormContent').innerHTML = `
+                <div style="background: rgba(39, 174, 96, 0.1); border-left: 4px solid #27ae60; padding: 15px; margin-bottom: 20px; border-radius: 4px;">
+                    <strong>Sample ID:</strong> ${sample.id}<br>
+                    <strong>Client:</strong> ${sample.client}<br>
+                    <strong>Amount Due:</strong> <span style="font-size:18px; font-weight:bold; color:#27ae60;">$${sample.feeAmount}</span>
+                </div>
+                <div class="form-group">
+                    <label>Payment Method</label>
+                    <select class="form-control">
+                        <option>Credit Card (POS)</option>
+                        <option>Bank Transfer / Invoice</option>
+                        <option>Cash</option>
+                    </select>
+                </div>
+                <button class="submit-btn" style="background-color: #27ae60;" onclick="executeCollectFee()">Process Payment</button>
+            `;
+            document.getElementById('dynamicModal').style.display = "flex";
+        }
+
+        function executeCollectFee() {
+            const sample = allSamples.find(s => s.id === activeSampleId);
+            sample.feePaid = true;
+            closeModal();
+            renderTable();
+            updateKPIs();
+            showToast("✅ Payment Collected Successfully!");
+        }
+
+        function openProcessModal(id) {
+            const sample = allSamples.find(s => s.id === id);
+            activeSampleId = id;
+            
+            const isMyTask = (sample.technician === ACTIVE_USER);
+            const techNoteStyle = isMyTask ? "" : "readonly style='background:rgba(0,0,0,0.05);'";
+            const btnText = isMyTask ? "Log Process Update" : "Update Status & Assignments";
+
+            const displayReport = sample.status === "Completed" ? (sample.researcherReport || "No report generated yet.") : "";
+
+            document.getElementById('modalTitle').innerText = `🧪 Process Workflow: ${id}`;
+            document.getElementById('modalFormContent').innerHTML = `
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Update Workflow Status</label>
+                        <select id="p_status" class="form-control" onchange="toggleRejectionNote(this.value)">
+                            ${getStatusOptions(sample.status)}
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Update Technician</label>
+                        <select id="p_technician" class="form-control">
+                            ${getTechnicianOptions(sample.technician)}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Update Researcher</label>
+                        <select id="p_researcher" class="form-control">
+                            ${getResearcherOptions(sample.researcher)}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Technician Notes <span id="reqLabel" style="color:var(--danger); display:none;">* (Required for Rejection)</span></label>
+                    <textarea id="p_techNote" class="form-control" placeholder="Log isolation volume, errors, or rejection reason..." oninput="this.classList.remove('error')" ${techNoteStyle}>${sample.techNote || ""}</textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label>Lead Researcher Report</label>
+                    <textarea class="form-control" readonly style="background:rgba(0,0,0,0.05);">${displayReport}</textarea>
+                </div>
+
+                <button class="submit-btn" onclick="executeProcessSample()">${btnText}</button>
+            `;
+            document.getElementById('dynamicModal').style.display = "flex";
+            
+            toggleRejectionNote(sample.status);
+        }
+
+        function toggleRejectionNote(val) {
+            document.getElementById("reqLabel").style.display = (val === "Invalid") ? "inline" : "none";
+        }
+
+        function executeProcessSample() {
+            const sample = allSamples.find(s => s.id === activeSampleId);
+            const newStatus = document.getElementById("p_status").value;
+            const noteInput = document.getElementById("p_techNote");
+            const isMyTask = (sample.technician === ACTIVE_USER);
+
+            if (newStatus === "Invalid" && isMyTask && noteInput.value.trim() === "") {
+                noteInput.classList.add("error");
+                showToast("❌ Please specify the rejection reason in Technician Notes!", "error");
+                return;
+            }
+
+            sample.status = newStatus;
+            sample.technician = document.getElementById("p_technician").value;
+            sample.researcher = document.getElementById("p_researcher").value;
+            
+            if(isMyTask) {
+                sample.techNote = noteInput.value.trim();
+            }
+            
+            closeModal();
+            filterDataByDate(); 
+            showToast(`✅ Sample Workflow Updated!`);
+        }
+    </script>
+</body>
+</html>

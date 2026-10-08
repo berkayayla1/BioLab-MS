@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BioLab-MS | Researcher Workspace</title>
+
+    <style>
+        :root {
+            --bg-color: #f4f6f8;
+            --card-bg: #ffffff;
+            --text-main: #2c3e50;
+            --text-muted: #7f8c8d;
+            --border-color: #ecf0f1;
+            --sidebar-bg: #1a252f;
+            --sidebar-header: #0f171e;
+            --table-head-bg: #f8f9fa;
+            --table-hover: #f1f2f6;
+            --input-bg: #ffffff;
+            --primary: #9b59b6; 
+            --primary-hover: #8e44ad;
+        }
+
+        body.dark-theme {
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --text-main: #e0e0e0;
+            --text-muted: #a0a0a0;
+            --border-color: #333333;
+            --sidebar-bg: #0a0a0a;
+            --sidebar-header: #000000;
+            --table-head-bg: #2c2c2c;
+            --table-hover: #2a2a2a;
+            --input-bg: #2c2c2c;
+            --primary: #8e44ad;
+            --primary-hover: #9b59b6;
+        }
+
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background-color: var(--bg-color); color: var(--text-main); display: flex; height: 100vh; overflow: hidden; transition: 0.3s; }
+        
+        .sidebar { width: 260px; background-color: var(--sidebar-bg); color: #ecf0f1; display: flex; flex-direction: column; transition: 0.3s; }
+        .sidebar-header { padding: 25px 20px; background-color: var(--sidebar-header); font-size: 22px; font-weight: bold; border-bottom: 1px solid var(--border-color); text-align: center; color: var(--primary); transition: 0.3s; }
+        .menu-items { flex-grow: 1; }
+        .menu-item { padding: 15px 20px; cursor: pointer; transition: 0.3s; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .menu-item.active, .menu-item:hover { background-color: rgba(255,255,255,0.1); border-left: 4px solid var(--primary); }
+        
+        .sidebar-bottom { padding: 20px; text-align: center; border-top: 1px solid rgba(255,255,255,0.1); background-color: var(--sidebar-header); transition: 0.3s;}
+        .clock-display { font-family: 'Courier New', Courier, monospace; font-size: 26px; font-weight: bold; color: #2ecc71; letter-spacing: 2px; margin-bottom: 5px; }
+        .date-display { font-size: 13px; color: var(--text-muted); font-weight: bold; letter-spacing: 1.5px; margin-bottom: 15px; }
+        
+        .theme-btn { background-color: #34495e; color: white; border: none; padding: 10px; width: 100%; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.3s; display: flex; justify-content: center; align-items: center; gap: 8px;}
+        .theme-btn:hover { background-color: #7f8c8d; }
+
+        .main-content { flex: 1; padding: 30px; overflow-y: auto; position: relative; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid var(--border-color); padding-bottom: 15px;}
+        .header h1 { color: var(--text-main); margin:0;}
+        
+        .profile-contact { font-size: 12.5px; color: var(--text-muted); margin-top: 5px;}
+        .profile-contact a { color: var(--primary); text-decoration: none; font-weight: bold;}
+        
+        .logout-btn { background-color: #e74c3c; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.3s;}
+        .logout-btn:hover { background-color: #c0392b; }
+
+        .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .date-filter { background: var(--input-bg); color: var(--text-main); padding: 10px 15px; border-radius: 8px; border: 1px solid var(--border-color); font-weight: bold; outline: none; cursor: pointer; transition: 0.3s;}
+
+        .grid-row { display: flex; gap: 20px; margin-bottom: 20px; }
+        .card { background: var(--card-bg); padding: 20px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); flex: 1; border-top: 4px solid var(--primary); transition: 0.3s; text-align: center; display: flex; flex-direction: column; justify-content: center;}
+        .card h3 { margin: 0 0 10px 0; color: var(--text-muted); font-size: 14px; text-transform: uppercase; letter-spacing: 1px;}
+        .card .stat { font-size: 38px; font-weight: bold; color: var(--text-main); }
+        
+        .table-container { background: var(--card-bg); padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: 0.3s;}
+        .table-container h3 { color: var(--text-main); margin-top: 0; border-bottom: 2px solid var(--border-color); padding-bottom: 10px;}
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13.5px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border-color); vertical-align: middle;}
+        th { background-color: var(--table-head-bg); color: var(--text-main); font-weight: bold; }
+        tr:hover { background-color: var(--table-hover); }
+        
+        .status-badge { padding: 5px 10px; border-radius: 4px; font-size: 11px; font-weight: bold; color: white; display: inline-block; width: 100px; text-align: center;}
+        .status-waiting { background: #f39c12; } 
+        .status-review { background: #3498db; animation: pulse 1.5s infinite alternate;} 
+        .status-completed { background: #2ecc71; } 
+
+        @keyframes pulse {
+            0% { opacity: 1; transform: scale(1); }
+            100% { opacity: 0.8; transform: scale(1.02); }
+        }
+
+        .analysis-badge { padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; color: white; display: inline-block;}
+        .analysis-pcr { background-color: #3498db; }
+        .analysis-ngs { background-color: #9b59b6; } 
+        .analysis-electro { background-color: #2ecc71; }
+
+        .type-badge { padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; color: white; display: inline-block; width: 45px; text-align: center;}
+        .type-dna { background-color: #e74c3c; }
+        .type-rna { background-color: #e67e22; }
+        .type-protein { background-color: #34495e; }
+
+        .action-btn { color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 11.5px; font-weight: bold; transition: 0.3s; width: 130px;}
+        .btn-review { background-color: var(--primary); }
+        .btn-review:hover { background-color: var(--primary-hover); }
+        .btn-revise { background-color: #3498db; }
+        .btn-revise:hover { background-color: #2980b9; }
+        .btn-disabled { background-color: #95a5a6; cursor: not-allowed; }
+
+        .pagination { display: flex; justify-content: center; align-items: center; gap: 15px; margin-top: 15px; }
+        .page-btn { padding: 8px 15px; border: none; background: #34495e; color: white; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.2s;}
+        .page-btn:hover:not(:disabled) { background: var(--primary); }
+        .page-btn:disabled { background: var(--border-color); color: var(--text-muted); cursor: not-allowed; }
+        .page-info { font-weight: bold; color: var(--text-main); }
+
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); justify-content: center; align-items: center; }
+        .modal-content { background-color: var(--card-bg); padding: 30px; border-radius: 10px; width: 800px; box-shadow: 0 5px 25px rgba(0,0,0,0.5); position: relative; transition: 0.3s; max-height: 90vh; overflow-y: auto;}
+        .close-btn { position: absolute; top: 15px; right: 20px; font-size: 24px; cursor: pointer; color: var(--text-muted); }
+        .close-btn:hover { color: #e74c3c; }
+        
+        .modal-header { border-bottom: 2px solid var(--primary); padding-bottom: 10px; margin-bottom: 20px;}
+        .modal-header h2 { margin: 0; color: var(--primary); }
+        
+        .modal-grid { display: flex; gap: 20px; }
+        .modal-col { flex: 1; }
+        
+        .info-box { background: rgba(52, 152, 219, 0.03); border: 1px solid rgba(52, 152, 219, 0.2); padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        .info-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 13px; border-bottom: 1px dashed var(--border-color); padding-bottom: 6px;}
+        .info-label { font-weight: bold; color: var(--text-main); white-space: nowrap; margin-right: 10px;}
+        .info-val { color: var(--text-muted); text-align: right;}
+
+        .notes-box { margin-top: 15px; background: rgba(0,0,0,0.03); border: 1px solid rgba(0,0,0,0.05); padding: 12px; border-radius: 6px; font-size: 12.5px; color: var(--text-muted); font-style: italic; line-height: 1.6;}
+        body.dark-theme .notes-box { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); }
+
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-weight: bold; font-size: 12.5px; color: var(--text-main); margin-bottom: 5px; }
+        .form-control { width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 6px; background-color: var(--input-bg); color: var(--text-main); font-family: inherit; font-size: 13px; box-sizing: border-box; transition: 0.3s;}
+        .form-control:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 3px rgba(155, 89, 182, 0.1); }
+        .form-control.error-shake { animation: shake 0.4s; border-color: #e74c3c; box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.2); }
+        
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            50% { transform: translateX(5px); }
+            75% { transform: translateX(-5px); }
+            100% { transform: translateX(0); }
+        }
+
+        textarea.form-control { resize: vertical; min-height: 90px; }
+
+        .signature-box { background: rgba(46, 204, 113, 0.05); border-left: 4px solid #2ecc71; padding: 10px; font-size: 12px; color: var(--text-muted); margin-bottom: 15px;}
+        
+        .submit-btn { background-color: #2ecc71; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; font-size: 14px; transition: 0.3s;}
+        .submit-btn:hover { filter: brightness(0.9); }
+
+        .toast {
+            visibility: hidden;
+            min-width: 250px;
+            background-color: #2ecc71; 
+            color: #fff;
+            text-align: center;
+            border-radius: 8px;
+            padding: 16px;
+            position: fixed;
+            z-index: 2000;
+            left: 50%;
+            bottom: 30px;
+            transform: translateX(-50%);
+            font-size: 15px;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            opacity: 0;
+            transition: opacity 0.3s, bottom 0.3s, background-color 0.3s;
+        }
+
+        .toast.show {
+            visibility: visible;
+            opacity: 1;
+            bottom: 50px;
+        }
+
+        .toast.error {
+            background-color: #e74c3c; 
+        }
+    </style>
+</head>
+<body>
+
+    <div id="toast" class="toast">✅ Report Successfully Created!</div>
+
+    <div class="sidebar">
+        <div class="sidebar-header">🧬 BioLab-MS</div>
+        
+        <div class="menu-items">
+            <div class="menu-item active">🔬 My Workspace</div>
+            <div class="menu-item" onclick="window.location.href='protocols.html'">🧪 Protocol Library</div>
+            <div class="menu-item" onclick="window.location.href='analysis.html'">📊 Data Analysis</div>
+            <div class="menu-item" onclick="window.location.href='biosafety-report.html'">⚠️ BioSafety Reports</div>
+        </div>
+
+        <div class="sidebar-bottom">
+            <div class="clock-display" id="realTimeClock">00:00:00</div>
+            <div class="date-display" id="realTimeDate">00.00.0000</div>
+            <button class="theme-btn" onclick="toggleTheme()" id="themeBtn">🌙 Enable Dark Mode</button>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="header">
+            <div>
+                <h1 style="margin:0;">Researcher Workspace</h1>
+                <p style="margin:8px 0 0 0; font-size: 15px;">
+                    <span style="color: var(--primary); font-weight: bold; font-size: 18px;">Welcome, Dr. Alice Smith</span><br>
+                    <span style="display:inline-block; margin-top:5px;"><strong>Role:</strong> Lead Researcher | <strong>Staff ID:</strong> RES-4421 | <strong>Speciality:</strong> PCR Analysis Expert </span>
+                </p>
+                <div class="profile-contact">
+                    📧 <a href="mailto:a.smith@biolab.com">a.smith@biolab.com</a> | 📞 +1 555-0201
+                </div>
+            </div>
+            <div>
+                <button class="logout-btn" onclick="window.location.href='index.html'">Log Out</button>
+            </div>
+        </div>
+
+        <div class="toolbar">
+            <h2 style="margin:0;">📅 Daily Review Queue</h2>
+            <input type="date" id="dateFilter" class="date-filter" onchange="filterDataByDate()">
+        </div>
+
+        <div class="grid-row">
+            <div class="card" style="border-top-color: #3498db;">
+                <h3>Total Assigned Samples</h3>
+                <div class="stat" id="kpiTotal">0</div>
+            </div>
+            <div class="card" style="border-top-color: #f39c12;">
+                <h3>Waiting For Tech</h3>
+                <div class="stat" id="kpiWaiting" style="color: #f39c12;">0</div>
+            </div>
+            <div class="card" style="border-top-color: var(--primary);">
+                <h3>Pending My Review</h3>
+                <div class="stat" id="kpiReview" style="color: var(--primary);">0</div>
+            </div>
+            <div class="card" style="border-top-color: #2ecc71;">
+                <h3>Reports Generated</h3>
+                <div class="stat" id="kpiCompleted" style="color: #2ecc71;">0</div>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <h3>📋 My Work Queue (Assigned Samples)</h3>
+            <table id="sampleTable">
+                <thead>
+                    <tr>
+                        <th>Sample ID</th>
+                        <th>Type</th>
+                        <th>Target Analysis</th>
+                        <th>Assigned Technician</th>
+                        <th style="text-align: center;">Task Status</th>
+                        <th style="text-align: center;">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    </tbody>
+            </table>
+            
+            <div class="pagination">
+                <button type="button" class="page-btn" id="prevBtn" onclick="changePage(-1)">◀ Previous</button>
+                <span class="page-info" id="pageInfo">Page 1 of 2</span>
+                <button type="button" class="page-btn" id="nextBtn" onclick="changePage(1)">Next ▶</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="reportModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal()">&times;</span>
+            <div class="modal-header">
+                <h2 id="modalTitle">🔬 Clinical Review & Report Generation</h2>
+                <div style="font-size: 12px; color: var(--text-muted); margin-top: 5px;">Sample ID: <strong id="m_id" style="color:var(--text-main);"></strong></div>
+            </div>
+            
+            <div class="modal-grid">
+                <div class="modal-col">
+                    <div class="info-box">
+                        <h4 style="margin: 0 0 15px 0; color: #3498db;">Data from Lab Technician</h4>
+                        <div class="info-row"><span class="info-label">Processed By:</span> <span class="info-val" id="m_tech"></span></div>
+                        <div class="info-row"><span class="info-label">Sample Type:</span> <span class="info-val" id="m_type"></span></div>
+                        
+                        <div class="info-row"><span class="info-label">Collection Date:</span> <span class="info-val" id="m_date"></span></div>
+                        <div class="info-row"><span class="info-label">Storage Env:</span> <span class="info-val" id="m_storage"></span></div>
+                        <div class="info-row"><span class="info-label">Reagents Used:</span> <span class="info-val" id="m_reagents"></span></div>
+                        <div class="info-row"><span class="info-label">Device No:</span> <span class="info-val" id="m_device"></span></div>
+                        <div class="info-row"><span class="info-label">Concentration:</span> <span class="info-val" id="m_conc"></span></div>
+                        
+                        <div class="info-row" style="border:none;">
+                            <span class="info-label">Raw Data File:</span> 
+                            <span class="info-val">📎 <a href="#" onclick="downloadCSV(); return false;" style="color:#3498db;">View_Data.csv</a></span>
+                        </div>
+                        
+                        <div style="margin-top: 15px;">
+                            <span class="info-label">Lab Technician Notes:</span>
+                            <div class="notes-box" id="m_notes"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-col">
+                    <div class="form-group">
+                        <label>1. Identify Target Analysis</label>
+                        <input type="text" id="m_analysis" class="form-control" readonly style="background-color: rgba(0,0,0,0.02); color:var(--text-muted); font-weight:bold;">
+                    </div>
+
+                    <div class="form-group">
+                        <label>2. Select Verification Protocol</label>
+                        <select id="m_protocol" class="form-control">
+                            <option value="Standard Diagnostic Protocol v2.1">Standard Diagnostic Protocol v2.1</option>
+                            <option value="High-Fidelity Amplification Check">High-Fidelity Amplification Check</option>
+                            <option value="Rapid Gel Validation">Rapid Gel Validation</option>
+                            <option value="Quality Control Bypass (Override)">Quality Control Bypass (Override)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>3. Final Scientific Result</label>
+                        <select id="m_result" class="form-control">
+                            <option value="Positive (+)">Positive (+)</option>
+                            <option value="Negative (-)">Negative (-)</option>
+                            <option value="Inconclusive (Requires Retest)">Inconclusive (Requires Retest)</option>
+                            <option value="Clear Protein Bands">Clear Protein Bands</option>
+                            <option value="Degraded Sample">Degraded Sample</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>4. Report - Clinical Findings</label>
+                        <textarea id="m_report" class="form-control" placeholder="Type your detailed scientific observations and conclusions here..."></textarea>
+                    </div>
+
+                    <div class="signature-box">
+                        ✍️ <strong>Digital Signature:</strong> By submitting this report, I, Dr. Alice Smith, verify the accuracy of these results under clinical laboratory guidelines.
+                    </div>
+
+                    <button id="modalSubmitBtn" class="submit-btn" onclick="submitResearcherReport()">✅ Sign & Publish Report</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('realTimeClock').innerText = now.toLocaleTimeString('en-US', { hour12: false });
+            const day = String(now.getDate()).padStart(2, '0');
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            document.getElementById('realTimeDate').innerText = `${day}.${month}.${now.getFullYear()}`;
+        }
+        setInterval(updateClock, 1000); updateClock();
+
+        let isDarkMode = false;
+        function toggleTheme() {
+            isDarkMode = !isDarkMode;
+            document.body.classList.toggle('dark-theme');
+            const btn = document.getElementById('themeBtn');
+            btn.innerHTML = isDarkMode ? "☀️ Enable Light Mode" : "🌙 Enable Dark Mode";
+            btn.style.backgroundColor = isDarkMode ? "#e67e22" : "#34495e";
+        }
+
+        function getFormattedDate(daysAgo) {
+            const date = new Date();
+            date.setDate(date.getDate() - daysAgo);
+            return date.toISOString().split('T')[0];
+        }
+
+        const dateToday = getFormattedDate(0);      
+        const dateYesterday = getFormattedDate(1);
+        const date2DaysAgo = getFormattedDate(2);
+
+        let allSamples = [
+            { id: "SMP-1001", date: dateToday, type: "DNA", analysis: "PCR", tech: "John Doe", status: "Pending Review", techNotes: "DNA isolation completed successfully. OD 260/280 ratio is 1.85. Raw amplification curve looks clean.", storage: "-80°C Freezer", reagents: "Taq Polymerase", device: "DEV-402", conc: "45.2 ng/µL", protocol: "", result: "", report: "" },
+            { id: "SMP-1002", date: dateToday, type: "RNA", analysis: "NGS", tech: "Sarah Connor", status: "Waiting For Tech", techNotes: "Sample logged. Waiting for RNA extraction.", storage: "-80°C Freezer", reagents: "Pending", device: "N/A", conc: "Pending", protocol: "", result: "", report: "" },
+            { id: "SMP-1003", date: dateToday, type: "Protein", analysis: "Electrophoresis", tech: "Michael Scott", status: "Completed", techNotes: "SDS-PAGE completed. Membrane transfer successful.", storage: "4°C Fridge", reagents: "SDS-PAGE buffer", device: "DEV-105", conc: "1.5 mg/mL", protocol: "Standard Diagnostic Protocol v2.1", result: "Clear Protein Bands", report: "Bands identified at target weights." },
+            { id: "SMP-1004", date: dateToday, type: "DNA", analysis: "NGS", tech: "Jane Roe", status: "Pending Review", techNotes: "Library prep finished. Sequencer data exported.", storage: "-80°C Freezer", reagents: "Library Prep Kit", device: "DEV-802", conc: "30.1 ng/µL", protocol: "", result: "", report: "" },
+            { id: "SMP-1005", date: dateToday, type: "RNA", analysis: "PCR", tech: "John Doe", status: "Waiting For Tech", techNotes: "Currently running the isolation protocol. Data not yet available.", storage: "-20°C Freezer", reagents: "Pending", device: "N/A", conc: "Pending", protocol: "", result: "", report: "" },
+            { id: "SMP-1006", date: dateToday, type: "DNA", analysis: "Electrophoresis", tech: "Sarah Connor", status: "Pending Review", techNotes: "Agarose gel run complete. Waiting for image review.", storage: "4°C Fridge", reagents: "Agarose", device: "DEV-110", conc: "55.0 ng/µL", protocol: "", result: "", report: "" },
+            { id: "SMP-1007", date: dateToday, type: "Protein", analysis: "PCR", tech: "Michael Scott", status: "Completed", techNotes: "Immuno-PCR completed.", storage: "-20°C Freezer", reagents: "Antibody Kit", device: "DEV-404", conc: "10.2 ng/µL", protocol: "Standard Diagnostic Protocol v2.1", result: "Positive (+)", report: "Antigen target confirmed." },
+            { id: "SMP-1008", date: dateToday, type: "RNA", analysis: "NGS", tech: "Jane Roe", status: "Waiting For Tech", techNotes: "Sample just received.", storage: "-80°C Freezer", reagents: "Pending", device: "N/A", conc: "Pending", protocol: "", result: "", report: "" },
+
+            { id: "SMP-2001", date: dateYesterday, type: "DNA", analysis: "PCR", tech: "John Doe", status: "Completed", techNotes: "Amplification successful.", storage: "-20°C Freezer", reagents: "Taq Polymerase", device: "DEV-402", conc: "40.0 ng/µL", protocol: "Standard Diagnostic Protocol v2.1", result: "Negative (-)", report: "No target sequence detected." },
+            { id: "SMP-2002", date: dateYesterday, type: "RNA", analysis: "Electrophoresis", tech: "Sarah Connor", status: "Pending Review", techNotes: "Gel run completed. Smearing observed.", storage: "-80°C Freezer", reagents: "Agarose", device: "DEV-111", conc: "22.5 ng/µL", protocol: "", result: "", report: "" },
+            { id: "SMP-2003", date: dateYesterday, type: "Protein", analysis: "NGS", tech: "Michael Scott", status: "Completed", techNotes: "Protein sequencing data compiled.", storage: "-80°C Freezer", reagents: "Illumina Kit", device: "DEV-801", conc: "15.0 ng/µL", protocol: "Standard Diagnostic Protocol v2.1", result: "Positive (+)", report: "Novel sequence verified." },
+            { id: "SMP-2004", date: dateYesterday, type: "DNA", analysis: "PCR", tech: "Jane Roe", status: "Pending Review", techNotes: "Run finished. Amplification curves look abnormal.", storage: "-20°C Freezer", reagents: "Taq Polymerase", device: "DEV-403", conc: "35.5 ng/µL", protocol: "", result: "", report: "" },
+            { id: "SMP-2005", date: dateYesterday, type: "RNA", analysis: "PCR", tech: "John Doe", status: "Completed", techNotes: "RT-PCR finished. Internal controls passed.", storage: "-80°C Freezer", reagents: "RT-PCR Kit", device: "DEV-405", conc: "12.8 ng/µL", protocol: "Standard Diagnostic Protocol v2.1", result: "Negative (-)", report: "Sample tested negative for target sequences." },
+            { id: "SMP-2006", date: dateYesterday, type: "DNA", analysis: "Electrophoresis", tech: "Sarah Connor", status: "Completed", techNotes: "Gel analysis finished.", storage: "4°C Fridge", reagents: "Agarose", device: "DEV-110", conc: "50.0 ng/µL", protocol: "Rapid Gel Validation", result: "Clear Protein Bands", report: "Expected bands confirmed." },
+            { id: "SMP-2007", date: dateYesterday, type: "Protein", analysis: "PCR", tech: "Michael Scott", status: "Pending Review", techNotes: "Antibody binding check done. Awaiting review.", storage: "-20°C Freezer", reagents: "Antibody Kit", device: "DEV-404", conc: "18.0 ng/µL", protocol: "", result: "", report: "" },
+            { id: "SMP-2008", date: dateYesterday, type: "RNA", analysis: "NGS", tech: "Jane Roe", status: "Completed", techNotes: "RNA-seq data ready.", storage: "-80°C Freezer", reagents: "Illumina Kit", device: "DEV-802", conc: "25.0 ng/µL", protocol: "Standard Diagnostic Protocol v2.1", result: "Positive (+)", report: "Target transcript found." },
+
+            { id: "SMP-3001", date: date2DaysAgo, type: "DNA", analysis: "Electrophoresis", tech: "John Doe", status: "Completed", techNotes: "Gel run successful.", storage: "4°C Fridge", reagents: "Agarose", device: "DEV-110", conc: "60.0 ng/µL", protocol: "Rapid Gel Validation", result: "Clear Protein Bands", report: "Clear DNA bands present." },
+            { id: "SMP-3002", date: date2DaysAgo, type: "Protein", analysis: "PCR", tech: "Sarah Connor", status: "Completed", techNotes: "Immuno-PCR completed.", storage: "-20°C Freezer", reagents: "Antibody Kit", device: "DEV-404", conc: "20.0 ng/µL", protocol: "Standard Diagnostic Protocol v2.1", result: "Negative (-)", report: "No protein detected." },
+            { id: "SMP-3003", date: date2DaysAgo, type: "RNA", analysis: "NGS", tech: "Michael Scott", status: "Completed", techNotes: "Sequencing complete.", storage: "-80°C Freezer", reagents: "Illumina Kit", device: "DEV-801", conc: "28.0 ng/µL", protocol: "Standard Diagnostic Protocol v2.1", result: "Positive (+)", report: "Verified variant." },
+            { id: "SMP-3004", date: date2DaysAgo, type: "DNA", analysis: "PCR", tech: "Jane Roe", status: "Completed", techNotes: "PCR run done.", storage: "-20°C Freezer", reagents: "Taq Polymerase", device: "DEV-402", conc: "42.0 ng/µL", protocol: "Standard Diagnostic Protocol v2.1", result: "Negative (-)", report: "Negative result." },
+            { id: "SMP-3005", date: date2DaysAgo, type: "Protein", analysis: "Electrophoresis", tech: "John Doe", status: "Completed", techNotes: "SDS-PAGE completed.", storage: "4°C Fridge", reagents: "SDS-PAGE buffer", device: "DEV-105", conc: "1.2 mg/mL", protocol: "Rapid Gel Validation", result: "Clear Protein Bands", report: "Bands are visible." },
+            { id: "SMP-3006", date: date2DaysAgo, type: "RNA", analysis: "PCR", tech: "Sarah Connor", status: "Completed", techNotes: "RT-PCR finished.", storage: "-80°C Freezer", reagents: "RT-PCR Kit", device: "DEV-405", conc: "14.5 ng/µL", protocol: "Standard Diagnostic Protocol v2.1", result: "Positive (+)", report: "Viral RNA detected." },
+            { id: "SMP-3007", date: date2DaysAgo, type: "DNA", analysis: "NGS", tech: "Michael Scott", status: "Completed", techNotes: "Library prep and seq done.", storage: "-80°C Freezer", reagents: "Nanopore Kit", device: "DEV-900", conc: "32.0 ng/µL", protocol: "Standard Diagnostic Protocol v2.1", result: "Negative (-)", report: "No mutations found." },
+            { id: "SMP-3008", date: date2DaysAgo, type: "Protein", analysis: "PCR", tech: "Jane Roe", status: "Completed", techNotes: "Immuno-PCR done.", storage: "-20°C Freezer", reagents: "Antibody Kit", device: "DEV-404", conc: "19.5 ng/µL", protocol: "Standard Diagnostic Protocol v2.1", result: "Positive (+)", report: "Antigen present." }
+        ];
+
+        let filteredSamples = [];
+        let currentPage = 1;
+        const itemsPerPage = 5;
+
+        window.onload = function() {
+            document.getElementById("dateFilter").value = dateToday;
+            filterDataByDate();
+        };
+
+        function filterDataByDate() {
+            const selectedDate = document.getElementById("dateFilter").value;
+            filteredSamples = allSamples.filter(s => s.date === selectedDate);
+            
+            currentPage = 1; 
+            updateKPIs();
+            renderTable();
+        }
+
+        function updateKPIs() {
+            document.getElementById('kpiTotal').innerText = filteredSamples.length;
+            document.getElementById('kpiWaiting').innerText = filteredSamples.filter(s => s.status === "Waiting For Tech").length;
+            document.getElementById('kpiReview').innerText = filteredSamples.filter(s => s.status === "Pending Review").length;
+            document.getElementById('kpiCompleted').innerText = filteredSamples.filter(s => s.status === "Completed").length;
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById("tableBody");
+            tbody.innerHTML = "";
+
+            const totalPages = Math.ceil(filteredSamples.length / itemsPerPage);
+
+            if (filteredSamples.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 20px; color: var(--text-muted);">No assigned samples for this date.</td></tr>`;
+                document.getElementById("pageInfo").innerText = "Page 1 of 1";
+                document.getElementById("prevBtn").disabled = true;
+                document.getElementById("nextBtn").disabled = true;
+                return;
+            }
+
+            document.getElementById("pageInfo").innerText = `Page ${currentPage} of ${totalPages}`;
+            document.getElementById("prevBtn").disabled = (currentPage <= 1);
+            document.getElementById("nextBtn").disabled = (currentPage >= totalPages);
+
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const paginatedItems = filteredSamples.slice(startIndex, startIndex + itemsPerPage);
+
+            paginatedItems.forEach(sample => {
+                let typeBadge = sample.type === "DNA" ? "type-dna" : (sample.type === "RNA" ? "type-rna" : "type-protein");
+                
+                let analysisBadge = "analysis-pcr";
+                if(sample.analysis === "NGS") analysisBadge = "analysis-ngs";
+                if(sample.analysis === "Electrophoresis") analysisBadge = "analysis-electro";
+                
+                let statusClass = "status-waiting";
+                let actionBtn = `<button class="action-btn btn-disabled" disabled>⏳ Waiting on Tech</button>`;
+                
+                if (sample.status === "Pending Review") {
+                    statusClass = "status-review";
+                    actionBtn = `<button class="action-btn btn-review" onclick="openReportModal('${sample.id}')">🔬 Review & Report</button>`;
+                } else if (sample.status === "Completed") {
+                    statusClass = "status-completed";
+                    actionBtn = `<button class="action-btn btn-revise" onclick="openReportModal('${sample.id}')">📝 Revise Report</button>`;
+                }
+
+                const row = `
+                    <tr>
+                        <td><strong>${sample.id}</strong></td>
+                        <td><span class="type-badge ${typeBadge}">${sample.type}</span></td>
+                        <td><span class="analysis-badge ${analysisBadge}">${sample.analysis}</span></td>
+                        <td>👨‍🔬 ${sample.tech}</td>
+                        <td style="text-align: center;"><span class="status-badge ${statusClass}">${sample.status}</span></td>
+                        <td style="text-align: center;">${actionBtn}</td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+        }
+
+        function changePage(direction) {
+            const totalPages = Math.ceil(filteredSamples.length / itemsPerPage);
+            if ((direction === 1 && currentPage < totalPages) || (direction === -1 && currentPage > 1)) {
+                currentPage += direction;
+                renderTable();
+            }
+        }
+
+        let currentSampleID = "";
+
+        function openReportModal(id) {
+            const sample = filteredSamples.find(s => s.id === id);
+            if(!sample) return;
+
+            currentSampleID = id;
+
+            document.getElementById('m_id').innerText = sample.id;
+            document.getElementById('m_tech').innerText = sample.tech;
+            document.getElementById('m_type').innerText = sample.type;
+            
+            document.getElementById('m_date').innerText = sample.date;
+            document.getElementById('m_storage').innerText = sample.storage;
+            document.getElementById('m_reagents').innerText = sample.reagents;
+            document.getElementById('m_device').innerText = sample.device;
+            document.getElementById('m_conc').innerText = sample.conc;
+
+            document.getElementById('m_notes').innerText = `"${sample.techNotes}"`;
+            
+            document.getElementById('m_analysis').value = `Target: ${sample.analysis} Analysis`;
+
+            const modalTitle = document.getElementById('modalTitle');
+            const submitBtn = document.getElementById('modalSubmitBtn');
+            const reportInput = document.getElementById('m_report');
+
+            reportInput.classList.remove('error-shake');
+
+            if(sample.status === "Completed") {
+                modalTitle.innerHTML = `📝 Revise Clinical Report`;
+                document.getElementById('m_protocol').value = sample.protocol;
+                document.getElementById('m_result').value = sample.result;
+                reportInput.value = sample.report;
+                
+                submitBtn.innerHTML = "🔄 Update & Republish Report";
+                submitBtn.style.backgroundColor = "#f39c12"; 
+            } else {
+                modalTitle.innerHTML = `🔬 Clinical Review & Report Generation`;
+                document.getElementById('m_protocol').selectedIndex = 0;
+                document.getElementById('m_result').selectedIndex = 0;
+                reportInput.value = "";
+                
+                submitBtn.innerHTML = "✅ Sign & Publish Report";
+                submitBtn.style.backgroundColor = "#2ecc71"; 
+            }
+
+            document.getElementById('reportModal').style.display = "flex";
+        }
+
+        function closeModal() {
+            document.getElementById('reportModal').style.display = "none";
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById("toast");
+            toast.innerText = message;
+            
+            if (type === 'error') {
+                toast.className = "toast show error";
+            } else {
+                toast.className = "toast show";
+            }
+            
+            setTimeout(function(){ 
+                toast.className = toast.className.replace("show", "").trim(); 
+            }, 3000);
+        }
+
+        function downloadCSV() {
+            const csvContent = "Cycle,Target_RFU,Control_RFU\n1,102.5,110.1\n2,105.0,112.4\n3,110.2,115.0\n4,150.8,120.3\n5,340.6,125.1\n6,520.1,130.8\n7,850.4,135.2";
+            
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", `Raw_Data_${currentSampleID}.csv`);
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            URL.revokeObjectURL(url);
+        }
+
+        function submitResearcherReport() {
+            const reportInput = document.getElementById('m_report');
+            const reportText = reportInput.value.trim();
+            const protocol = document.getElementById('m_protocol').value;
+            const result = document.getElementById('m_result').value;
+
+            if(reportText === "") {
+                reportInput.classList.remove('error-shake'); 
+                void reportInput.offsetWidth; 
+                reportInput.classList.add('error-shake'); 
+                
+                showToast("❌ Error: You must write a clinical report before publishing!", "error");
+                return;
+            }
+
+            const index = allSamples.findIndex(s => s.id === currentSampleID);
+            if(index !== -1) {
+                const isUpdate = allSamples[index].status === "Completed";
+                
+                allSamples[index].status = "Completed";
+                allSamples[index].protocol = protocol;
+                allSamples[index].result = result;
+                allSamples[index].report = reportText;
+                
+                if (isUpdate) {
+                    showToast("✅ Report Successfully Updated!");
+                } else {
+                    showToast("✅ Report Successfully Created!");
+                }
+                
+                closeModal();
+                filterDataByDate(); 
+            }
+        }
+    </script>
+</body>
+</html>

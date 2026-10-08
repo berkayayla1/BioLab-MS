@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BioLab-MS | BioSafety Command Center</title>
+
+    <style>
+        :root {
+            --bg-color: #f4f6f8;
+            --card-bg: #ffffff;
+            --text-main: #2c3e50;
+            --text-muted: #7f8c8d;
+            --border-color: #ecf0f1;
+            --sidebar-bg: #1a252f;
+            --sidebar-header: #0f171e;
+            --table-head-bg: #f8f9fa;
+            --table-hover: #f1f2f6;
+            --input-bg: #ffffff;
+            
+            /* Amber/Orange Theme for Safety Officer */
+            --primary: #e67e22; 
+            --primary-hover: #d35400;
+            
+            /* Status Colors */
+            --safe: #2ecc71;
+            --warning: #f39c12;
+            --danger: #e74c3c;
+            --info: #3498db;
+        }
+
+        body.dark-theme {
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --text-main: #e0e0e0;
+            --text-muted: #a0a0a0;
+            --border-color: #333333;
+            --sidebar-bg: #0a0a0a;
+            --sidebar-header: #000000;
+            --table-head-bg: #2c2c2c;
+            --table-hover: #2a2a2a;
+            --input-bg: #2c2c2c;
+            --primary: #d35400;
+        }
+
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background-color: var(--bg-color); color: var(--text-main); display: flex; height: 100vh; overflow: hidden; transition: 0.3s; }
+        
+        .sidebar { width: 260px; background-color: var(--sidebar-bg); color: #ecf0f1; display: flex; flex-direction: column; transition: 0.3s; }
+        .sidebar-header { padding: 25px 20px; background-color: var(--sidebar-header); font-size: 22px; font-weight: bold; border-bottom: 1px solid var(--border-color); text-align: center; color: var(--primary); transition: 0.3s; }
+        .menu-items { flex-grow: 1; }
+        .menu-item { padding: 15px 20px; cursor: pointer; transition: 0.3s; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .menu-item.active, .menu-item:hover { background-color: rgba(255,255,255,0.1); border-left: 4px solid var(--primary); }
+        
+        .sidebar-bottom { padding: 20px; text-align: center; border-top: 1px solid rgba(255,255,255,0.1); background-color: var(--sidebar-header); transition: 0.3s;}
+        
+        /* Yeşil Saat Rengi */
+        .clock-display { font-family: 'Courier New', Courier, monospace; font-size: 26px; font-weight: bold; color: #2ecc71; letter-spacing: 2px; margin-bottom: 5px; text-shadow: 0 0 5px rgba(46, 204, 113, 0.5); }
+        .date-display { font-size: 13px; color: var(--text-muted); font-weight: bold; letter-spacing: 1.5px; margin-bottom: 15px; }
+        
+        .theme-btn { background-color: #34495e; color: white; border: none; padding: 10px; width: 100%; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.3s; display: flex; justify-content: center; align-items: center; gap: 8px;}
+        .theme-btn:hover { background-color: #7f8c8d; }
+
+        .main-content { flex: 1; padding: 30px; overflow-y: auto; position: relative; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid var(--border-color); padding-bottom: 15px;}
+        .header h1 { color: var(--text-main); margin:0;}
+        
+        .profile-contact { font-size: 12.5px; color: var(--text-muted); margin-top: 5px;}
+        .profile-contact a { color: var(--primary); text-decoration: none; font-weight: bold;}
+        
+        .logout-btn { background-color: var(--danger); color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.3s;}
+        .logout-btn:hover { background-color: #c0392b; }
+
+        .dashboard-top { display: flex; gap: 20px; margin-bottom: 20px; }
+        
+        .threat-panel { flex: 1.5; background: var(--card-bg); padding: 25px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); display: flex; flex-direction: column; justify-content: center; text-align: center; border-top: 4px solid var(--primary);}
+        
+        .threat-banner { font-size: 24px; font-weight: bold; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 2px solid; transition: 0.3s; letter-spacing: 1px;}
+        .banner-safe { background: rgba(46, 204, 113, 0.1); color: var(--safe); border-color: var(--safe); }
+        .banner-elevated { background: rgba(243, 156, 18, 0.1); color: var(--warning); border-color: var(--warning); animation: pulse-yellow 2s infinite;}
+        .banner-critical { background: rgba(231, 76, 60, 0.1); color: var(--danger); border-color: var(--danger); animation: pulse-red 1.5s infinite;}
+
+        @keyframes pulse-red { 0% { box-shadow: 0 0 5px rgba(231,76,60,0.2); } 50% { box-shadow: 0 0 20px rgba(231,76,60,0.6); } 100% { box-shadow: 0 0 5px rgba(231,76,60,0.2); } }
+        @keyframes pulse-yellow { 0% { box-shadow: 0 0 5px rgba(243,156,18,0.2); } 50% { box-shadow: 0 0 15px rgba(243,156,18,0.4); } 100% { box-shadow: 0 0 5px rgba(243,156,18,0.2); } }
+
+        .control-btns { display: flex; gap: 10px; justify-content: center; }
+        .ctrl-btn { flex: 1; padding: 12px; border: none; border-radius: 6px; font-weight: bold; color: white; cursor: pointer; transition: 0.3s; font-size: 13px; text-transform: uppercase;}
+        .ctrl-safe { background-color: var(--safe); } .ctrl-safe:hover { filter: brightness(0.9); }
+        .ctrl-warning { background-color: var(--warning); } .ctrl-warning:hover { filter: brightness(0.9); }
+        .ctrl-danger { background-color: var(--danger); } .ctrl-danger:hover { filter: brightness(0.9); }
+
+        .lab-list { margin-top: 20px; text-align: left; }
+        .bsl-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border-color); font-size: 14px; font-weight: bold;}
+        .bsl-row:last-child { border-bottom: none; }
+        
+        .bsl-select { padding: 4px 8px; border-radius: 4px; font-size: 12px; color: white; font-weight: bold; border: none; cursor: pointer; outline: none; transition: 0.3s; text-align: center; font-family: inherit;}
+        .bsl-select option { background: var(--card-bg); color: var(--text-main); }
+        .bsl-1 { background-color: var(--safe); }
+        .bsl-2 { background-color: var(--warning); }
+        .bsl-3 { background-color: var(--danger); }
+        .bsl-4 { background-color: #8e44ad; }
+        .bsl-evaluator { font-size: 10.5px; color: var(--text-muted); font-weight: normal; margin-top: 4px; display: block; text-align: right;}
+
+        .kpi-container { flex: 1; display: flex; flex-direction: column; gap: 15px;}
+        .kpi-card { flex: 1; background: var(--card-bg); padding: 15px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); text-align: center; display: flex; flex-direction: column; justify-content: center;}
+        .kpi-card h3 { margin: 0 0 5px 0; color: var(--text-muted); font-size: 13px; text-transform: uppercase;}
+        .kpi-card .stat { font-size: 34px; font-weight: bold; color: var(--text-main); }
+
+        .table-container { background: var(--card-bg); padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: 0.3s;}
+        
+        .toolbar { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border-color); padding-bottom: 10px; margin-bottom: 10px; }
+        .date-filter { background: var(--input-bg); color: var(--text-main); padding: 8px 15px; border-radius: 6px; border: 1px solid var(--border-color); font-weight: bold; outline: none; cursor: pointer; transition: 0.3s;}
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13.5px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border-color); vertical-align: middle;}
+        th { background-color: var(--table-head-bg); color: var(--text-main); font-weight: bold; }
+        tr:hover { background-color: var(--table-hover); }
+        
+        .badge-pill { padding: 5px 12px; border-radius: 15px; font-size: 11px; font-weight: bold; color: white; display: inline-block; text-align: center; }
+        
+        .sev-critical { background-color: var(--danger); }
+        .sev-high { background-color: #d35400; }
+        .sev-medium { background-color: var(--warning); }
+        .sev-low { background-color: #f1c40f; color: #000; }
+        .sev-investigating { background-color: #95a5a6; }
+
+        .st-investigating { background-color: var(--warning); }
+        .st-quarantine { background-color: var(--danger); }
+        .st-cleared { background-color: var(--safe); }
+
+        .action-btn { background-color: var(--primary); color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; transition: 0.3s; display: flex; align-items: center; gap: 5px;}
+        .action-btn:hover { background-color: var(--primary-hover); }
+        .btn-view { background-color: #2ecc71; }
+        .btn-view:hover { background-color: #27ae60; }
+
+        .pagination { display: flex; justify-content: center; align-items: center; gap: 15px; margin-top: 15px; }
+        .page-btn { padding: 8px 15px; border: none; background: #34495e; color: white; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.2s;}
+        .page-btn:hover:not(:disabled) { background: var(--primary); }
+        .page-btn:disabled { background: var(--border-color); color: var(--text-muted); cursor: not-allowed; }
+        .page-info { font-weight: bold; color: var(--text-main); }
+
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); justify-content: center; align-items: center; }
+        .modal-content { background-color: var(--card-bg); padding: 30px; border-radius: 10px; width: 650px; box-shadow: 0 5px 25px rgba(0,0,0,0.5); position: relative; transition: 0.3s; max-height: 90vh; overflow-y: auto;}
+        .close-btn { position: absolute; top: 15px; right: 20px; font-size: 24px; cursor: pointer; color: var(--text-muted); }
+        .close-btn:hover { color: var(--danger); }
+        
+        .modal-header { border-bottom: 2px solid var(--primary); padding-bottom: 10px; margin-bottom: 20px;}
+        .modal-header h2 { margin: 0; color: var(--primary); }
+
+        .read-only-box { background: rgba(0,0,0,0.03); border: 1px solid var(--border-color); padding: 15px; border-radius: 6px; margin-bottom: 20px; font-size: 13.5px; line-height: 1.5;}
+        .read-only-box strong { color: var(--text-main); }
+
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-weight: bold; font-size: 13px; color: var(--text-main); margin-bottom: 5px; }
+        .form-control { width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 6px; background-color: var(--input-bg); color: var(--text-main); font-family: inherit; font-size: 13.5px; box-sizing: border-box; transition: 0.3s;}
+        .form-control:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 3px rgba(230, 126, 34, 0.2); }
+        .form-control.error { border-color: var(--danger); box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.2); }
+        
+        .form-row { display: flex; gap: 15px; }
+        .form-row > div { flex: 1; }
+        textarea.form-control { resize: vertical; min-height: 100px; }
+
+        .submit-btn { background-color: var(--primary); color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; font-size: 15px; transition: 0.3s; margin-top: 10px;}
+        .submit-btn:hover { filter: brightness(0.9); }
+
+        .toast { visibility: hidden; min-width: 250px; background-color: var(--safe); color: #fff; text-align: center; border-radius: 8px; padding: 16px; position: fixed; z-index: 2000; left: 50%; bottom: 30px; transform: translateX(-50%); font-size: 15px; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.2); opacity: 0; transition: opacity 0.3s, bottom 0.3s; }
+        .toast.show { visibility: visible; opacity: 1; bottom: 50px; }
+        .toast.error { background-color: var(--danger); }
+    </style>
+</head>
+<body>
+
+    <div id="toast" class="toast">✅ System Updated!</div>
+
+    <div class="sidebar">
+        <div class="sidebar-header">🧬 BioLab-MS</div>
+        <div class="menu-items">
+            <div class="menu-item active">🛡️ Command Center</div>
+        </div>
+
+        <div class="sidebar-bottom">
+            <div class="clock-display" id="realTimeClock">00:00:00</div>
+            <div class="date-display" id="realTimeDate">00.00.0000</div>
+            <button class="theme-btn" onclick="toggleTheme()" id="themeBtn">🌙 Enable Dark Mode</button>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="header">
+            <div>
+                <h1 style="margin:0;">BioSafety Command Center</h1>
+                <p style="margin:8px 0 0 0; font-size: 15px;">
+                    <span style="color: var(--primary); font-weight: bold; font-size: 18px;">Welcome, Mark Taylor</span><br>
+                    <span style="display:inline-block; margin-top:5px;">
+                        <strong>Role:</strong> Chief BioSafety Officer | 
+                        <strong>Staff ID:</strong> BSO-001 
+                    </span>
+                </p>
+                <div class="profile-contact">
+                    📧 <a href="mailto:m.taylor@biolab.com">m.taylor@biolab.com</a> | 📞 +1 555-9911
+                </div>
+            </div>
+            <div>
+                <button class="logout-btn" onclick="window.location.href='index.html'">Log Out</button>
+            </div>
+        </div>
+
+        <div class="dashboard-top">
+            <div class="threat-panel">
+                <h3 style="margin-top:0; color:var(--text-main); margin-bottom:15px;">🚨 Global Facility Threat Level</h3>
+                <div id="threatBanner" class="threat-banner banner-safe">
+                    ✅ THREAT LEVEL: SECURE
+                </div>
+                <div class="control-btns">
+                    <button class="ctrl-btn ctrl-safe" onclick="setThreatLevel('Secure')">SET SECURE</button>
+                    <button class="ctrl-btn ctrl-warning" onclick="setThreatLevel('Elevated')">SET ELEVATED</button>
+                    <button class="ctrl-btn ctrl-danger" onclick="setThreatLevel('Critical')">INITIATE LOCKDOWN</button>
+                </div>
+                
+                <h4 style="margin-top: 25px; margin-bottom: 5px; color:var(--text-main); border-bottom: 1px solid var(--border-color); padding-bottom:5px;">🧪 Adjust Lab BSL Ratings</h4>
+                <div class="lab-list" id="dynamicLabList">
+                    </div>
+            </div>
+
+            <div class="kpi-container">
+                <div class="kpi-card" style="border-left: 4px solid var(--danger);">
+                    <h3>Quarantined / Lockdown</h3>
+                    <div class="stat" id="kpiActive">0</div>
+                </div>
+                <div class="kpi-card" style="border-left: 4px solid var(--warning);">
+                    <h3>Investigating</h3>
+                    <div class="stat" id="kpiInvestigating">0</div>
+                </div>
+                <div class="kpi-card" style="border-left: 4px solid var(--safe);">
+                    <h3>Cleared This Week</h3>
+                    <div class="stat" id="kpiCleared">0</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <div class="toolbar">
+                <h3 style="margin: 0; border: none; padding: 0;">📥 Incoming Reports & Incident Feed</h3>
+                <input type="date" id="dateFilter" class="date-filter" onchange="filterDataByDate()">
+            </div>
+            <table id="incidentTable">
+                <thead>
+                    <tr>
+                        <th>Event ID</th>
+                        <th>Time</th>
+                        <th>Reported By</th>
+                        <th>Event / Location</th>
+                        <th style="text-align: center;">Severity</th>
+                        <th style="text-align: center;">Status</th>
+                        <th style="text-align: center;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    </tbody>
+            </table>
+
+            <div class="pagination">
+                <button type="button" class="page-btn" id="prevBtn" onclick="changePage(-1)">◀ Previous</button>
+                <span class="page-info" id="pageInfo">Page 1 of 2</span>
+                <button type="button" class="page-btn" id="nextBtn" onclick="changePage(1)">Next ▶</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="assessmentModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal()">&times;</span>
+            <div class="modal-header">
+                <h2 id="modalTitle">📋 Assess & Write Report</h2>
+            </div>
+            
+            <div class="read-only-box" id="modalReadOnly">
+                </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Update Severity</label>
+                    <select id="a_severity" class="form-control">
+                        <option value="Investigating">Investigating</option>
+                        <option value="Low">Low (Minor Issue)</option>
+                        <option value="Medium">Medium (Protocol Breach)</option>
+                        <option value="High">High (Spill / Exposure)</option>
+                        <option value="Critical">Critical (Immediate Evacuation)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Update Official Status</label>
+                    <select id="a_status" class="form-control">
+                        <option value="Investigating">Investigating</option>
+                        <option value="Quarantined">Quarantined / Lockdown</option>
+                        <option value="Cleared">Cleared (Resolved)</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>Official BSO Action Plan & Report</label>
+                <textarea id="a_report" class="form-control" placeholder="Detail the decontamination steps, exposure logging, and required actions..." oninput="this.classList.remove('error')"></textarea>
+                <span id="reportWarning" style="color:var(--danger); font-size:12px; display:none; font-weight:bold; margin-top:5px;">⚠️ Report is mandatory unless Severity and Status are 'Investigating'.</span>
+            </div>
+
+            <button class="submit-btn" onclick="executeAssessment()">💾 Save Official Report & Update Status</button>
+        </div>
+    </div>
+
+    <script>
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('realTimeClock').innerText = now.toLocaleTimeString('en-US', { hour12: false });
+            const day = String(now.getDate()).padStart(2, '0');
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            document.getElementById('realTimeDate').innerText = `${day}.${month}.${now.getFullYear()}`;
+        }
+        setInterval(updateClock, 1000); updateClock();
+
+        function toggleTheme() {
+            document.body.classList.toggle('dark-theme');
+            const btn = document.getElementById('themeBtn');
+            btn.innerHTML = document.body.classList.contains('dark-theme') ? "☀️ Enable Light Mode" : "🌙 Enable Dark Mode";
+            btn.style.backgroundColor = document.body.classList.contains('dark-theme') ? "#f39c12" : "#34495e";
+        }
+
+        function getFormattedDate(daysAgo) {
+            const date = new Date();
+            date.setDate(date.getDate() - daysAgo);
+            return date.toISOString().split('T')[0];
+        }
+
+        const dateToday = getFormattedDate(0);      
+        const dateYesterday = getFormattedDate(1);
+        const date2DaysAgo = getFormattedDate(2);
+        const date3DaysAgo = getFormattedDate(3);
+
+        let facilities = [
+            { name: "Genetics Laboratory", bsl: "BSL-2" },
+            { name: "Molecular Biology Lab", bsl: "BSL-2" },
+            { name: "Bioinformatics Lab", bsl: "BSL-1" },
+            { name: "Microbiology Laboratory", bsl: "BSL-3" }
+        ];
+
+        let allIncidents = generateMockData();
+        let filteredIncidents = [];
+        
+        let currentPage = 1;
+        const itemsPerPage = 5;
+
+        window.onload = function() {
+            renderFacilities();
+            document.getElementById("dateFilter").value = dateToday;
+            filterDataByDate();
+        };
+
+        function generateMockData() {
+            const dates = [dateToday, dateYesterday, date2DaysAgo, date3DaysAgo];
+            const types = ["Chemical Spill", "Server Overheat", "Centrifuge Breakage", "Gloves Puncture", "Biohazard Leak"];
+            const reporters = [
+                {name: "Dr. Bob Clarke", role: "Lead Researcher"}, {name: "Dr. Emily Davis", role: "Lead Researcher"},
+                {name: "Dr. Alice Smith", role: "Lead Researcher"}, {name: "Dr. James Wilson", role: "Lead Researcher"}
+            ];
+            
+            let data = [];
+            let idCounter = 901;
+
+            dates.forEach((d, index) => {
+                for(let i=0; i<8; i++) {
+                    let r = reporters[Math.floor(Math.random() * reporters.length)];
+                    
+                    let status = "Cleared";
+                    let severity = "Low";
+                    let bsoReport = "Incident assessed and resolved.";
+
+                    if (index === 0) { // Bugün
+                        status = Math.random() > 0.3 ? "Investigating" : "Quarantined";
+                    } else if (index === 1) { // Dün
+                        status = Math.random() > 0.6 ? "Investigating" : "Cleared";
+                    }
+
+                    if (status === "Investigating") {
+                        severity = "Investigating";
+                        bsoReport = "";
+                    } else if (status === "Quarantined") {
+                        severity = Math.random() > 0.5 ? "High" : "Critical";
+                        bsoReport = "Area secured. Waiting for hazmat clearance.";
+                    } else {
+                        severity = ["Low", "Medium"][Math.floor(Math.random()*2)];
+                    }
+
+                    let timeStr = String(Math.floor(Math.random()*8 + 8)).padStart(2,'0') + ":" + String(Math.floor(Math.random()*60)).padStart(2,'0');
+
+                    data.push({
+                        id: "INC-" + idCounter++,
+                        date: d,
+                        time: timeStr,
+                        lab: facilities[Math.floor(Math.random() * facilities.length)].name,
+                        type: types[Math.floor(Math.random() * types.length)],
+                        reporterRole: r.role,
+                        reporter: r.name,
+                        severity: severity,
+                        status: status,
+                        sample: "SMP-" + Math.floor(Math.random()*9000 + 1000),
+                        desc: "Standard automated hazard alert generated.",
+                        bsoReport: bsoReport
+                    });
+                }
+            });
+            return data;
+        }
+
+        function filterDataByDate() {
+            const selectedDate = document.getElementById("dateFilter").value;
+            filteredIncidents = allIncidents.filter(i => i.date === selectedDate);
+            currentPage = 1; 
+            updateKPIs();
+            renderTable();
+        }
+
+        function renderFacilities() {
+            const list = document.getElementById("dynamicLabList");
+            list.innerHTML = "";
+            facilities.forEach((fac, index) => {
+                let colorClass = fac.bsl === "BSL-1" ? "bsl-1" : (fac.bsl === "BSL-2" ? "bsl-2" : (fac.bsl === "BSL-3" ? "bsl-3" : "bsl-4"));
+                
+                const row = `
+                    <div class="bsl-row">
+                        <span>${fac.name}</span>
+                        <div style="text-align: right;">
+                            <select class="bsl-select ${colorClass}" onchange="updateBSL(${index}, this.value)">
+                                <option value="BSL-1" ${fac.bsl === 'BSL-1' ? 'selected' : ''}>BSL-1</option>
+                                <option value="BSL-2" ${fac.bsl === 'BSL-2' ? 'selected' : ''}>BSL-2</option>
+                                <option value="BSL-3" ${fac.bsl === 'BSL-3' ? 'selected' : ''}>BSL-3</option>
+                                <option value="BSL-4" ${fac.bsl === 'BSL-4' ? 'selected' : ''}>BSL-4</option>
+                            </select>
+                            <span class="bsl-evaluator">Certified by M. Taylor</span>
+                        </div>
+                    </div>
+                `;
+                list.innerHTML += row;
+            });
+        }
+
+        function updateBSL(index, newValue) {
+            facilities[index].bsl = newValue;
+            renderFacilities();
+            showToast(`✅ ${facilities[index].name} upgraded to ${newValue}!`, "warning");
+        }
+
+        function setThreatLevel(level) {
+            const banner = document.getElementById("threatBanner");
+            if (level === 'Secure') {
+                banner.className = "threat-banner banner-safe";
+                banner.innerHTML = "✅ THREAT LEVEL: SECURE";
+                showToast("Facility marked as Secure.", "success");
+            } else if (level === 'Elevated') {
+                banner.className = "threat-banner banner-elevated";
+                banner.innerHTML = "⚠️ THREAT LEVEL: ELEVATED";
+                showToast("Facility marked as Elevated Risk.", "warning");
+            } else if (level === 'Critical') {
+                banner.className = "threat-banner banner-critical";
+                banner.innerHTML = "🚨 THREAT LEVEL: CRITICAL (LOCKDOWN)";
+                showToast("LOCKDOWN INITIATED!", "error");
+            }
+        }
+
+        function updateKPIs() {
+            document.getElementById('kpiActive').innerText = filteredIncidents.filter(i => i.status === "Quarantined").length;
+            document.getElementById('kpiInvestigating').innerText = filteredIncidents.filter(i => i.status === "Investigating").length;
+            document.getElementById('kpiCleared').innerText = filteredIncidents.filter(i => i.status === "Cleared").length;
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById("tableBody");
+            tbody.innerHTML = "";
+
+            const totalPages = Math.ceil(filteredIncidents.length / itemsPerPage);
+
+            if (filteredIncidents.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 20px; color: var(--text-muted);">No reports for this date.</td></tr>`;
+                document.getElementById("pageInfo").innerText = "Page 1 of 1";
+                document.getElementById("prevBtn").disabled = true;
+                document.getElementById("nextBtn").disabled = true;
+                return;
+            }
+
+            document.getElementById("pageInfo").innerText = `Page ${currentPage} of ${totalPages}`;
+            document.getElementById("prevBtn").disabled = (currentPage <= 1);
+            document.getElementById("nextBtn").disabled = (currentPage >= totalPages);
+
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const paginatedItems = filteredIncidents.slice(startIndex, startIndex + itemsPerPage);
+
+            paginatedItems.forEach(inc => {
+                let sevClass = "sev-pending";
+                if(inc.severity === "Critical") sevClass = "sev-critical";
+                else if(inc.severity === "High") sevClass = "sev-high";
+                else if(inc.severity === "Medium") sevClass = "sev-medium";
+                else if(inc.severity === "Low") sevClass = "sev-low";
+                else if(inc.severity === "Investigating") sevClass = "sev-investigating";
+
+                let stClass = "st-investigating";
+                if(inc.status === "Quarantined") stClass = "st-quarantine";
+                else if(inc.status === "Cleared") stClass = "st-cleared";
+
+                let hasReport = inc.bsoReport.trim().length > 0;
+                let btnText = hasReport ? "🔍 View Report" : "✍️ Assess";
+                let btnClass = hasReport ? "action-btn btn-view" : "action-btn";
+
+                const row = `
+                    <tr>
+                        <td><strong>${inc.id}</strong></td>
+                        <td>${inc.time}</td>
+                        <td>
+                            <div style="font-size:10px; color:var(--text-muted); text-transform:uppercase;">${inc.reporterRole}</div>
+                            <strong>${inc.reporter}</strong>
+                        </td>
+                        <td>
+                            <strong style="color:var(--primary);">${inc.type}</strong><br>
+                            📍 ${inc.lab}
+                        </td>
+                        <td style="text-align: center;"><span class="badge-pill ${sevClass}">${inc.severity}</span></td>
+                        <td style="text-align: center;"><span class="badge-pill ${stClass}">${inc.status}</span></td>
+                        <td style="text-align: center;">
+                            <button class="${btnClass}" style="margin: 0 auto;" onclick="openAssessmentModal('${inc.id}')">${btnText}</button>
+                        </td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+        }
+
+        function changePage(direction) {
+            const totalPages = Math.ceil(filteredIncidents.length / itemsPerPage);
+            if ((direction === 1 && currentPage < totalPages) || (direction === -1 && currentPage > 1)) {
+                currentPage += direction;
+                renderTable();
+            }
+        }
+
+        let activeIncidentId = "";
+
+        function openAssessmentModal(id) {
+            const inc = allIncidents.find(i => i.id === id);
+            activeIncidentId = id;
+            
+            document.getElementById("modalTitle").innerText = (inc.bsoReport.trim() !== "") ? "🔍 View / Edit Report" : "📋 Assess Incident";
+
+            document.getElementById("modalReadOnly").innerHTML = `
+                <strong>Event ID:</strong> ${inc.id} &nbsp;|&nbsp; <strong>Date:</strong> ${inc.date} ${inc.time}<br>
+                <strong>Location:</strong> ${inc.lab} &nbsp;|&nbsp; <strong>Sample:</strong> ${inc.sample}<br>
+                <strong>Reported By:</strong> ${inc.reporter} (${inc.reporterRole})<br><br>
+                <strong>Initial Report Description:</strong><br>
+                <em>"${inc.desc}"</em>
+            `;
+
+            document.getElementById("a_severity").value = inc.severity;
+            document.getElementById("a_status").value = inc.status;
+            
+            const reportInput = document.getElementById("a_report");
+            reportInput.value = inc.bsoReport || "";
+            reportInput.classList.remove("error");
+            document.getElementById("reportWarning").style.display = "none";
+
+            document.getElementById("assessmentModal").style.display = "flex";
+        }
+
+        function closeModal() {
+            document.getElementById("assessmentModal").style.display = "none";
+        }
+
+        function showToast(msg, type = "success") {
+            const toast = document.getElementById("toast");
+            toast.innerText = msg;
+            if(type === "error") toast.style.backgroundColor = "var(--danger)";
+            else if(type === "warning") toast.style.backgroundColor = "var(--warning)";
+            else toast.style.backgroundColor = "var(--safe)";
+            
+            toast.className = "toast show";
+            setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 3000);
+        }
+
+        function executeAssessment() {
+            const inc = allIncidents.find(i => i.id === activeIncidentId);
+            const reportInput = document.getElementById("a_report");
+            const reportValue = reportInput.value.trim();
+            const newSeverity = document.getElementById("a_severity").value;
+            const newStatus = document.getElementById("a_status").value;
+
+            // ZORUNLU ALAN (VALIDATION) KONTROLÜ
+            if ((newSeverity !== "Investigating" || newStatus !== "Investigating") && reportValue === "") {
+                reportInput.classList.add("error");
+                document.getElementById("reportWarning").style.display = "block";
+                showToast("❌ Error: Report is mandatory for this status/severity!", "error");
+                return;
+            }
+            
+            inc.severity = newSeverity;
+            inc.status = newStatus;
+            inc.bsoReport = reportValue;
+
+            closeModal();
+            filterDataByDate(); 
+            
+            if (inc.status === "Quarantined" || inc.severity === "Critical") {
+                setThreatLevel("Critical");
+            } else {
+                showToast("✅ Assessment Saved Successfully!");
+            }
+        }
+    </script>
+</body>
+</html>

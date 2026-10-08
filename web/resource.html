@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BioLab-MS | Resource Allocation</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #f0f2f5;
+            --card-bg: #ffffff;
+            --text-main: #2c3e50;
+            --text-muted: #7f8c8d;
+            --border-color: #ecf0f1;
+            --sidebar-bg: #1a252f;
+            --sidebar-header: #0f171e;
+            --input-bg: #ffffff;
+            --danger-bg: #ffeaa7;
+            --primary: #3498db; 
+        }
+
+        body.dark-theme {
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --text-main: #e0e0e0;
+            --text-muted: #a0a0a0;
+            --border-color: #333333;
+            --sidebar-bg: #0a0a0a;
+            --sidebar-header: #000000;
+            --input-bg: #2c2c2c;
+            --danger-bg: #4a2311;
+            --primary: #2980b9;
+        }
+
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background-color: var(--bg-color); color: var(--text-main); display: flex; height: 100vh; overflow: hidden; transition: background-color 0.3s, color 0.3s; }
+        
+        .sidebar { width: 260px; background-color: var(--sidebar-bg); color: #ecf0f1; display: flex; flex-direction: column; transition: background-color 0.3s; }
+        .sidebar-header { padding: 25px 20px; background-color: var(--sidebar-header); font-size: 22px; font-weight: bold; border-bottom: 1px solid var(--border-color); text-align: center; color: #3498db; transition: background-color 0.3s; }
+        .menu-items { flex-grow: 1; }
+        .menu-item { padding: 15px 20px; cursor: pointer; transition: 0.3s; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .menu-item.active, .menu-item:hover { background-color: rgba(255,255,255,0.1); border-left: 4px solid #3498db; }
+        
+        .sidebar-bottom { padding: 20px; text-align: center; border-top: 1px solid rgba(255,255,255,0.1); background-color: var(--sidebar-header); transition: background-color 0.3s;}
+        .clock-display { font-family: 'Courier New', Courier, monospace; font-size: 26px; font-weight: bold; color: #2ecc71; letter-spacing: 2px; margin-bottom: 5px; text-shadow: 0 0 5px rgba(46, 204, 113, 0.5); }
+        .date-display { font-size: 13px; color: var(--text-muted); font-weight: bold; letter-spacing: 1.5px; margin-bottom: 15px; }
+        
+        .theme-btn { background-color: #34495e; color: white; border: none; padding: 10px; width: 100%; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.3s; display: flex; justify-content: center; align-items: center; gap: 8px;}
+        .theme-btn:hover { background-color: #9b59b6; }
+
+        .main-content { flex: 1; padding: 30px; overflow-y: auto; position: relative; }
+        
+        /* HEADER STYLES */
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; border-bottom: 2px solid var(--border-color); padding-bottom: 15px;}
+        .header h1 { color: var(--text-main); margin:0;}
+        .header p { margin:8px 0 0 0; font-size: 15px; }
+        .manager-contact { font-size: 12.5px; color: var(--text-muted); margin-top: 5px;}
+        .manager-contact a { color: var(--primary); text-decoration: none; font-weight: bold;}
+        
+        .logout-btn { background-color: #e74c3c; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+
+        .grid-row { display: flex; gap: 20px; margin-bottom: 20px; }
+        .card { background: var(--card-bg); padding: 20px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); flex: 1; border-top: 4px solid #34495e; transition: background-color 0.3s; display: flex; flex-direction: column;}
+        .card h3 { margin: 0 0 15px 0; color: var(--text-main); font-size: 16px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; display: flex; justify-content: space-between;}
+        
+        .inventory-list { max-height: 400px; overflow-y: auto; padding-right: 10px; }
+        .inventory-list::-webkit-scrollbar { width: 6px; }
+        .inventory-list::-webkit-scrollbar-track { background: var(--bg-color); border-radius: 4px;}
+        .inventory-list::-webkit-scrollbar-thumb { background: var(--text-muted); border-radius: 4px; }
+
+        .stat-row { display: flex; justify-content: space-between; margin-bottom: 5px; font-weight: bold; font-size: 13px; color: var(--text-main); }
+        .stat-value { color: var(--text-muted); font-size: 12px; font-weight: normal;}
+        .bar-bg { width: 100%; background: var(--border-color); border-radius: 4px; height: 8px; margin-bottom: 12px; overflow: hidden; position: relative;}
+        .bar-fill { height: 100%; transition: width 0.5s ease; }
+        
+        .fill-taq { background: #3498db; } 
+        .fill-illumina { background: #e74c3c; } 
+        .fill-sds { background: #9b59b6; } 
+        .fill-library { background: #e67e22; } 
+        .fill-rtpcr { background: #f1c40f; } 
+        .fill-nanopore { background: #1abc9c; } 
+        .fill-lysis { background: #34495e; } 
+        .fill-agarose { background: #ff9ff3; } 
+        .fill-antibody { background: #2ecc71; } 
+        
+        .dev-working { background: #2ecc71; }
+        .dev-maint { background: #f39c12; }
+        .dev-broken { background: #e74c3c; }
+
+        .trend-chart { display: flex; align-items: flex-end; justify-content: space-between; height: 160px; padding-top: 30px; gap: 12px; flex-grow: 1; border-bottom: 2px solid var(--border-color); padding-bottom: 5px;}
+        .trend-col { display: flex; flex-direction: column; align-items: center; width: 100%; height: 100%; justify-content: flex-end; position: relative;}
+        
+        .trend-bar { 
+            width: 100%; max-width: 35px; 
+            background: linear-gradient(to top, #8e44ad, #9b59b6); 
+            border-radius: 4px 4px 0 0; 
+            transition: height 0.5s ease, background 0.3s ease, transform 0.2s; 
+            position: relative; display: flex; justify-content: center;
+        }
+        .trend-bar:hover { 
+            background: linear-gradient(to top, #2980b9, #3498db); 
+            cursor: pointer;
+        }
+        .trend-val { position: absolute; top: -22px; font-size: 12px; font-weight: bold; color: var(--text-main);}
+        .trend-label { font-size: 11px; color: var(--text-muted); margin-top: 8px; font-weight: bold;}
+
+        .trend-tooltip {
+            visibility: hidden;
+            opacity: 0;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #1a252f;
+            color: #fff;
+            text-align: left;
+            border-radius: 6px;
+            padding: 10px;
+            width: 150px;
+            z-index: 100;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            transition: opacity 0.3s, visibility 0.3s;
+            font-size: 11px;
+            pointer-events: none; 
+        }
+        .trend-tooltip::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: #1a252f transparent transparent transparent;
+        }
+        
+        .trend-col:hover .trend-tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
+        
+        .tt-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px;}
+        .tt-row { margin-bottom: 3px; display:flex; justify-content: space-between;}
+
+        .table-container { background: var(--card-bg); padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 20px; transition: background-color 0.3s;}
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13.5px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border-color); }
+        th { background-color: var(--table-head-bg); color: var(--text-main); }
+        tr:hover { background-color: var(--table-hover); }
+        
+        .status-badge { padding: 5px 10px; border-radius: 4px; font-size: 11px; font-weight: bold; color: white; display: inline-block; width: 80px; text-align: center;}
+        .badge-working { background: #2ecc71; } 
+        .badge-maint { background: #f39c12; } 
+        .badge-broken { background: #e74c3c; } 
+
+        .low-level-badge { background: #e74c3c; color: white; font-weight: bold; padding: 3px 6px; border-radius: 4px; font-size: 11px; display: inline-block; margin-left: 8px; animation: pulse 1.5s infinite;}
+        @keyframes pulse {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.05); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="sidebar-header">🧬 BioLab-MS</div>
+        <div class="menu-items">
+            <div class="menu-item" onclick="window.location.href='manager.html'">📊 Sample Tracking</div>
+            <div class="menu-item" onclick="window.location.href='personnel.html'">👥 Personnel Tasks</div>
+            <div class="menu-item active">📦 Resource Allocation</div>
+            <div class="menu-item" onclick="window.location.href='biosafety.html'">⚠️ BioSafety Logs</div>
+        </div>
+
+        <div class="sidebar-bottom">
+            <div class="clock-display" id="realTimeClock">00:00:00</div>
+            <div class="date-display" id="realTimeDate">00.00.0000</div>
+            <button class="theme-btn" onclick="toggleTheme()" id="themeBtn">🌙 Enable Dark Mode</button>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="header">
+            <div>
+                <h1 style="margin:0;">Resource & Equipment Allocation</h1>
+                <p style="margin:8px 0 0 0; font-size: 15px;">
+                    <span style="color: var(--primary); font-weight: bold; font-size: 18px;" id="userNameDisplay">Welcome, Charlie Harper</span><br>
+                    <span style="display:inline-block; margin-top:5px; color: var(--text-main);">
+                        <strong>Role:</strong> Lab Manager | <strong>Staff ID:</strong> MAN-9990
+                    </span>
+                </p>
+                <div class="manager-contact">
+                    📧 <a href="mailto:c.harper@biolab.com">c.harper@biolab.com</a> | 📞 +1 555-9000
+                </div>
+            </div>
+            <div class="btn-group">
+                <button class="logout-btn" onclick="window.location.href='index.html'">Log Out</button>
+            </div>
+        </div>
+
+        <div class="grid-row">
+            <div class="card" style="border-top-color: #3498db; flex: 1.2;">
+                <h3>📦 Detailed Reagent Inventory <span style="font-size:12px; color:var(--text-muted);">Real-Time</span></h3>
+                <div class="inventory-list">
+                    <div class="stat-row"><span>Taq Polymerase</span> <span class="stat-value">350 / 500 (70%)</span></div>
+                    <div class="bar-bg"><div class="bar-fill fill-taq" style="width: 70%;"></div></div>
+                    
+                    <div class="stat-row"><span>⚠️ Illumina Kit</span> <span class="stat-value">180 / 200 (90%)</span></div>
+                    <div class="bar-bg"><div class="bar-fill fill-illumina" style="width: 90%;"></div></div>
+
+                    <div class="stat-row"><span>SDS-PAGE Buffer</span> <span class="stat-value">100 / 300 (33%)</span></div>
+                    <div class="bar-bg"><div class="bar-fill fill-sds" style="width: 33%;"></div></div>
+
+                    <div class="stat-row"><span>⚠️ Library Prep Kit</span> <span class="stat-value">40 / 50 (80%)</span></div>
+                    <div class="bar-bg"><div class="bar-fill fill-library" style="width: 80%;"></div></div>
+
+                    <div class="stat-row"><span>RT-PCR Kit</span> <span class="stat-value">120 / 150 (80%)</span></div>
+                    <div class="bar-bg"><div class="bar-fill fill-rtpcr" style="width: 80%;"></div></div>
+
+                    <div class="stat-row"><span>Nanopore Kit</span> <span class="stat-value">12 / 20 (60%)</span></div>
+                    <div class="bar-bg"><div class="bar-fill fill-nanopore" style="width: 60%;"></div></div>
+
+                    <div class="stat-row"><span>Lysis Buffer</span> <span class="stat-value">200 / 500 (40%)</span></div>
+                    <div class="bar-bg"><div class="bar-fill fill-lysis" style="width: 40%;"></div></div>
+
+                    <div class="stat-row"><span>Agarose</span> <span class="stat-value">45 / 100 (45%)</span></div>
+                    <div class="bar-bg"><div class="bar-fill fill-agarose" style="width: 45%;"></div></div>
+
+                    <div class="stat-row"><span>Antibody Kit</span> <span class="stat-value">55 / 100 (55%)</span></div>
+                    <div class="bar-bg"><div class="bar-fill fill-antibody" style="width: 55%;"></div></div>
+                </div>
+            </div>
+
+            <div class="card" style="border-top-color: #2ecc71; flex: 1;">
+                <h3>🖥️ Device Fleet Status <span style="font-size:12px; color:var(--text-muted);">Total: 12 Units</span></h3>
+                
+                <div class="stat-row"><span>✅ Working (Active)</span> <span class="stat-value">8 Units</span></div>
+                <div class="bar-bg"><div class="bar-fill dev-working" style="width: 66%;"></div></div>
+                
+                <div class="stat-row"><span>⏳ In Maintenance</span> <span class="stat-value">3 Units</span></div>
+                <div class="bar-bg"><div class="bar-fill dev-maint" style="width: 25%;"></div></div>
+
+                <div class="stat-row"><span>❌ Broken / Offline</span> <span class="stat-value">1 Unit</span></div>
+                <div class="bar-bg"><div class="bar-fill dev-broken" style="width: 9%;"></div></div>
+            </div>
+
+            <div class="card" style="border-top-color: #9b59b6; flex: 1.2;">
+                <h3>📈 Total Kits Consumed (Last 7 Days)</h3>
+                <div class="trend-chart" id="trendChart">
+                    </div>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <h3 style="margin:0 0 15px 0; color:var(--text-main);">📋 Equipment Allocation & Live Status</h3>
+            <table id="deviceTable">
+                <thead>
+                    <tr>
+                        <th>Device ID</th>
+                        <th>Lab Section</th>
+                        <th>Device Type</th>
+                        <th>Loaded Reagent Kit</th>
+                        <th>Current Load Level</th>
+                        <th style="text-align: center;">Status</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('realTimeClock').innerText = now.toLocaleTimeString('en-US', { hour12: false });
+            const day = String(now.getDate()).padStart(2, '0');
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            document.getElementById('realTimeDate').innerText = `${day}.${month}.${now.getFullYear()}`;
+        }
+        setInterval(updateClock, 1000); updateClock();
+
+        let isDarkMode = false;
+        function toggleTheme() {
+            isDarkMode = !isDarkMode;
+            document.body.classList.toggle('dark-theme');
+            const btn = document.getElementById('themeBtn');
+            btn.innerHTML = isDarkMode ? "☀️ Enable Light Mode" : "🌙 Enable Dark Mode";
+            btn.style.backgroundColor = isDarkMode ? "#e67e22" : "#34495e";
+        }
+
+        const deviceData = [
+            { id: "402", unit: "Genetics Laboratory", type: "Thermal Cycler (PCR)", reagent: "Taq Polymerase", load: "85%", status: "Working" },
+            { id: "403", unit: "Genetics Laboratory", type: "Thermal Cycler (PCR)", reagent: "Taq Polymerase", load: "40%", status: "Working" },
+            { id: "405", unit: "Molecular Biology", type: "RT-PCR Machine", reagent: "RT-PCR Kit", load: "10%", status: "Working" },
+            { id: "801", unit: "Bioinformatics", type: "Sequencer", reagent: "Illumina Kit", load: "95%", status: "Working" },
+            { id: "802", unit: "Bioinformatics", type: "Sequencer", reagent: "Library Prep Kit", load: "Empty", status: "Maintenance" },
+            { id: "900", unit: "Genetics Laboratory", type: "Nanopore Array", reagent: "Nanopore Kit", load: "N/A", status: "Broken" },
+            { id: "105", unit: "Microbiology Lab", type: "Electrophoresis Cell", reagent: "SDS-PAGE Buffer", load: "60%", status: "Working" },
+            { id: "110", unit: "Genetics Laboratory", type: "Electrophoresis Cell", reagent: "Agarose", load: "Empty", status: "Maintenance" },
+            { id: "111", unit: "Molecular Biology", type: "Electrophoresis Cell", reagent: "Agarose", load: "8%", status: "Working" }
+        ];
+
+        window.onload = function() {
+            renderTrendChart();
+            renderDeviceTable();
+        };
+
+        const kitColors = {
+            "Taq": "#3498db",
+            "Illumina": "#e74c3c",
+            "SDS": "#9b59b6",
+            "Library": "#e67e22",
+            "RT-PCR": "#f1c40f",
+            "Nanopore": "#1abc9c",
+            "Lysis": "#34495e",
+            "Agarose": "#ff9ff3",
+            "Antibody": "#2ecc71"
+        };
+
+        function renderTrendChart() {
+            const chart = document.getElementById("trendChart");
+            chart.innerHTML = ""; 
+            
+            const usageHistory = [
+                { dayOffset: 6, total: 35, breakdown: { "Taq": 15, "Illumina": 8, "Agarose": 12 } },
+                { dayOffset: 5, total: 42, breakdown: { "RT-PCR": 20, "Taq": 10, "Lysis": 12 } },
+                { dayOffset: 4, total: 50, breakdown: { "Nanopore": 5, "Illumina": 15, "SDS": 30 } },
+                { dayOffset: 3, total: 38, breakdown: { "Taq": 18, "Agarose": 10, "Antibody": 10 } },
+                { dayOffset: 2, total: 65, breakdown: { "Illumina": 25, "Library": 20, "Lysis": 20 } },
+                { dayOffset: 1, total: 48, breakdown: { "Taq": 22, "RT-PCR": 16, "Antibody": 10 } },
+                { dayOffset: 0, total: 55, breakdown: { "Illumina": 15, "Taq": 25, "SDS": 15 } } 
+            ];
+
+            const maxCount = Math.max(...usageHistory.map(u => u.total));
+
+            usageHistory.forEach(item => {
+                const d = new Date();
+                d.setDate(d.getDate() - item.dayOffset);
+                const dayStr = String(d.getDate()).padStart(2, '0') + "." + String(d.getMonth() + 1).padStart(2, '0');
+
+                const heightPercent = (item.total / (maxCount * 1.1)) * 100; 
+
+                let tooltipHTML = `<div style="text-align:center; border-bottom:1px solid #333; padding-bottom:5px; margin-bottom:5px;"><strong>${dayStr} Usage</strong></div>`;
+                
+                for (const [kitName, kitCount] of Object.entries(item.breakdown)) {
+                    const exactColor = kitColors[kitName] || "#ffffff";
+                    
+                    tooltipHTML += `<div class="tt-row">
+                                        <span><span class="tt-dot" style="background:${exactColor};"></span>${kitName}</span>
+                                        <strong>${kitCount}</strong>
+                                    </div>`;
+                }
+
+                chart.innerHTML += `
+                    <div class="trend-col">
+                        <div class="trend-tooltip" style="bottom: calc(${heightPercent}% + 25px);">${tooltipHTML}</div>
+                        <div class="trend-bar" style="height: ${heightPercent}%;">
+                            <span class="trend-val">${item.total}</span>
+                        </div>
+                        <span class="trend-label">${dayStr}</span>
+                    </div>
+                `;
+            });
+        }
+
+        function renderDeviceTable() {
+            const tbody = document.getElementById("tableBody");
+            
+            deviceData.forEach(dev => {
+                let badgeClass = "badge-working";
+                if(dev.status === "Maintenance") badgeClass = "badge-maint";
+                if(dev.status === "Broken") badgeClass = "badge-broken";
+
+                let loadHTML = dev.load;
+                let isLowLevel = false;
+
+                if (dev.load === "Empty") {
+                    isLowLevel = true;
+                } else if (dev.load !== "N/A") {
+                    let numericVal = parseInt(dev.load.replace('%', ''));
+                    if (!isNaN(numericVal) && numericVal <= 10) {
+                        isLowLevel = true;
+                    }
+                }
+
+                if (isLowLevel) {
+                    loadHTML = `<strong>${dev.load}</strong> <span class="low-level-badge">Low Level!</span>`;
+                }
+
+                const row = `
+                    <tr>
+                        <td><strong>DEV-${dev.id}</strong></td>
+                        <td>📍 ${dev.unit}</td>
+                        <td>${dev.type}</td>
+                        <td>🧪 ${dev.reagent}</td>
+                        <td>${loadHTML}</td>
+                        <td style="text-align: center;"><span class="status-badge ${badgeClass}">${dev.status}</span></td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+        }
+    </script>
+</body>
+</html>
